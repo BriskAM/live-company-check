@@ -1,21 +1,129 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens, after amehta.space: GitHub light, Dracula dark. Components use only these
+ * (bg-card, text-ink, border-line, text-accent, bg-ok/15 …), so both themes come for free.
+ * Dark follows the OS unless the reviewer picked a theme (data-theme on <html>).
+ */
+:root {
+  --bg: #f6f8fa;
+  --ink: #1f2328;
+  --muted: #59636e;
+  --card: #ffffff;
+  --line: #d1d9e0;
+  --chip: #eaeef2;
+  --accent: #8250df;
+  --on-accent: #ffffff;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #cf222e;
+  --info: #0969da;
+  /* Charts: series validated against the card surface (lightness band, chroma, contrast). */
+  --series: #8250df;
+  --grid: #e6ebf1;
+  --axis: #6e7781;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #21222c;
+  --ink: #f8f8f2;
+  --muted: #b4bcdf;
+  --card: #2b2d3a;
+  --line: #44475a;
+  --chip: #3b3e50;
+  --accent: #bd93f9;
+  --on-accent: #21222c;
+  --ok: #50fa7b;
+  --warn: #f1fa8c;
+  --bad: #ff5555;
+  --info: #8be9fd;
+  --series: #a07af0;
+  --grid: #3a3d4e;
+  --axis: #9ea6c9;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #21222c;
+    --ink: #f8f8f2;
+    --muted: #b4bcdf;
+    --card: #2b2d3a;
+    --line: #44475a;
+    --chip: #3b3e50;
+    --accent: #bd93f9;
+    --on-accent: #21222c;
+    --ok: #50fa7b;
+    --warn: #f1fa8c;
+    --bad: #ff5555;
+    --info: #8be9fd;
+    --series: #a07af0;
+    --grid: #3a3d4e;
+    --axis: #9ea6c9;
+    color-scheme: dark;
+  }
+}
+
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-chip: var(--chip);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-info: var(--info);
 }
 
 body {
-  background: #f7f7f8;
-  color: #18181b;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Small uppercase section label, like the site's "EXPERIENCE". */
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Briefly highlights a case-file section the reviewer jumped to from the activity stream. */
+.flash {
+  animation: flash 1.2s ease-out;
+}
+@keyframes flash {
+  from {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  to {
+    box-shadow: 0 0 0 2px transparent;
+  }
 }
 
 /* Markdown rendered from the agent (messages and report). */
 .md h2 {
-  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
   font-weight: 600;
-  margin: 1rem 0 0.35rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 1.1rem 0 0.35rem;
 }
 .md h2:first-child {
   margin-top: 0;
@@ -31,8 +139,18 @@ body {
 .md li {
   margin: 0.2rem 0;
 }
+.md li::marker {
+  color: var(--muted);
+}
 .md strong {
   font-weight: 600;
+}
+.md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--chip);
+  border-radius: 3px;
+  padding: 0 0.25em;
 }
 
 /* Blinking caret on text that is still streaming. */
@@ -40,10 +158,17 @@ body {
   content: "▍";
   margin-left: 1px;
   animation: blink 1s steps(2, start) infinite;
-  color: #a1a1aa;
+  color: var(--accent);
 }
 @keyframes blink {
   to {
     visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streaming::after,
+  .flash {
+    animation: none;
   }
 }

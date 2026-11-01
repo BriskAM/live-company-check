@@ -43,12 +43,15 @@ export function QuestionCard({
   const locked = answered || sending;
 
   return (
-    <section className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-      <p className="text-sm font-medium text-zinc-900">{question.question}</p>
+    <section
+      className={`rounded-md border p-4 ${answered ? "border-line bg-card" : "border-accent/70 bg-accent/10 shadow-sm"}`}
+    >
+      <div className="label mb-1.5">{answered ? "Question" : "Question for you"}</div>
+      <p className="text-sm font-medium text-ink">{question.question}</p>
 
       {answered ? (
-        <p className="mt-2 text-sm text-zinc-700">
-          <span className="text-zinc-500">You answered: </span>
+        <p className="mt-2 text-sm text-ink">
+          <span className="text-muted">You answered: </span>
           {Array.isArray(question.answer)
             ? (question.answer as string[]).map(label).join(", ")
             : question.kind === "single"
@@ -64,7 +67,7 @@ export function QuestionCard({
                   key={o.id}
                   disabled={locked}
                   onClick={() => submit(o.id)}
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-left text-sm hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-md border border-line bg-card px-3 py-2 text-left text-sm text-ink hover:border-accent disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {o.label}
                 </button>
@@ -90,7 +93,7 @@ export function QuestionCard({
               <button
                 disabled={locked || selected.length === 0}
                 onClick={() => submit(selected)}
-                className="mt-1 self-start rounded-lg bg-zinc-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+                className="mt-1 self-start rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-on-accent disabled:opacity-40"
               >
                 Submit
               </button>
@@ -110,26 +113,26 @@ export function QuestionCard({
                 disabled={locked}
                 onChange={(e) => setText(e.target.value)}
                 rows={2}
-                className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm"
+                className="rounded-md border border-line bg-card text-ink px-3 py-2 text-sm"
                 placeholder="Type your answer…"
               />
               <button
                 type="submit"
                 disabled={locked || !text.trim()}
-                className="self-start rounded-lg bg-zinc-900 px-3 py-1.5 text-sm text-white disabled:opacity-40"
+                className="self-start rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-on-accent disabled:opacity-40"
               >
                 Send
               </button>
             </form>
           )}
 
-          {sending && <p className="mt-2 text-xs text-zinc-500">Sending…</p>}
+          {sending && <p className="mt-2 text-xs text-muted">Sending…</p>}
           {paused && (
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted">
               The check is paused. You can answer now; it is applied when you resume.
             </p>
           )}
-          {error && <p className="mt-2 text-xs text-red-600">Couldn’t send: {error}. Try again.</p>}
+          {error && <p className="mt-2 text-xs text-bad">Couldn’t send: {error}. Try again.</p>}
         </div>
       )}
     </section>

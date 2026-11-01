@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { api, Check } from "@/lib/api";
 
 export default function Home() {
@@ -35,48 +36,75 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-2xl font-semibold">Live Company Check</h1>
-      <p className="mt-1 text-sm text-zinc-500">
-        Enter a company name. The agent investigates while you watch, answer its questions and
-        give feedback.
-      </p>
+    <div className="min-h-screen">
+      <header className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-4">
+        <span className="grid h-8 w-8 place-items-center rounded-md bg-accent font-mono text-xs font-bold text-on-accent">
+          CC
+        </span>
+        <span className="font-mono text-sm font-semibold">company-check</span>
+        <span className="ml-auto">
+          <ThemeToggle />
+        </span>
+      </header>
 
-      <form onSubmit={start} className="mt-6 flex gap-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g. Pinecrest Home Services"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500"
-          autoFocus
-        />
-        <button
-          disabled={starting || !query.trim()}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-        >
-          {starting ? "Starting…" : "Start check"}
-        </button>
-      </form>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      <main className="mx-auto max-w-3xl px-4 pb-16 pt-10">
+        <span className="inline-flex items-center gap-2 rounded border border-line bg-card px-2.5 py-1 text-xs text-muted">
+          <span className="h-2 w-2 rounded-sm bg-accent" />
+          Due diligence with a human in the loop
+        </span>
+        <h1 className="mt-4 font-mono text-4xl font-bold tracking-tighter sm:text-5xl">
+          Check a company, <span className="text-accent">live</span>.
+        </h1>
+        <p className="mt-3 max-w-xl text-muted">
+          The agent reads the records, reviews and news while you watch. It asks when something is
+          unclear, and every piece of feedback you give changes only what it affects.
+        </p>
 
-      <h2 className="mt-10 text-sm font-semibold text-zinc-700">Recent checks</h2>
-      <div className="mt-2 divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white">
-        {checks === null && !error && <p className="p-4 text-sm text-zinc-400">Loading…</p>}
-        {checks?.length === 0 && <p className="p-4 text-sm text-zinc-400">No checks yet.</p>}
-        {checks?.map((c) => (
-          <Link
-            key={c.id}
-            href={`/checks/${c.id}`}
-            className="flex items-center justify-between px-4 py-3 text-sm hover:bg-zinc-50"
+        <form onSubmit={start} className="mt-8 flex gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Company name, e.g. Pinecrest Home Services"
+            aria-label="Company name"
+            className="min-w-0 flex-1 rounded-md border border-line bg-card px-3 py-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+            autoFocus
+          />
+          <button
+            disabled={starting || !query.trim()}
+            className="shrink-0 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-on-accent disabled:opacity-40"
           >
-            <span className="font-medium">{c.input}</span>
-            <span className="flex items-center gap-3">
-              <span className="text-xs text-zinc-400">{new Date(c.created_at).toLocaleString()}</span>
-              <StatusBadge status={c.status} />
-            </span>
-          </Link>
-        ))}
-      </div>
-    </main>
+            {starting ? "Starting…" : "Start check"}
+          </button>
+        </form>
+        {error && <p className="mt-3 text-sm text-bad">{error}</p>}
+
+        <section className="mt-12 rounded-md border border-line bg-card">
+          <h2 className="label border-b border-line px-4 py-2.5">Recent checks</h2>
+          {checks === null && !error && <p className="p-4 text-sm text-muted">Loading…</p>}
+          {checks?.length === 0 && <p className="p-4 text-sm text-muted">No checks yet. Start one above.</p>}
+          <ul className="divide-y divide-line">
+            {checks?.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/checks/${c.id}`}
+                  className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-chip/60"
+                >
+                  <span className="min-w-0 flex-1 truncate font-medium text-ink">{c.input}</span>
+                  <span className="hidden shrink-0 font-mono text-[11px] text-muted sm:inline">
+                    {new Date(c.created_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <StatusBadge status={c.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </main>
+    </div>
   );
 }
