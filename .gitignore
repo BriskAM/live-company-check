@@ -27,3 +27,6 @@ dist/
 # Private source documents, kept out of the repo
 *.docx
 *.pdf
+
+# Local tooling
+.claude/
