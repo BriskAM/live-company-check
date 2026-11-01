@@ -337,6 +337,7 @@ async function feedback(text) {
 
 /** Park the cursor on Pause and click the moment the report starts streaming. */
 async function pauseWhenReportStarts() {
+  await fresh(LIFE / 1000 - 2); // a new Chrome now, so no relaunch lands as the report starts
   await moveTo(() => page.getByRole("button", { name: "Pause" }));
   let caught = false;
   await working(() =>
