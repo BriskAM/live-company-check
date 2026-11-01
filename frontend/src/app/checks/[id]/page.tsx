@@ -15,15 +15,16 @@ type Control = "pause" | "resume" | "retry";
 type Tab = "activity" | "case";
 
 const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+const usd = (n: number) => (n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`);
 
 function Usage({ usage }: { usage: CheckView["usage"] }) {
   if (!usage.calls) return null;
   return (
     <span
       className="hidden font-mono text-[11px] text-muted md:inline"
-      title={`${usage.calls} LLM calls · ${usage.input.toLocaleString()} tokens in, ${usage.output.toLocaleString()} out · ${usage.models.join(", ")}`}
+      title={`${usage.calls} LLM calls · ${usage.input.toLocaleString()} tokens in, ${usage.output.toLocaleString()} out · ${usage.models.join(", ")}\nEstimated at paid list prices; a free-tier key costs nothing.`}
     >
-      {fmt(usage.input + usage.output)} tokens · {usage.calls} calls
+      {fmt(usage.input + usage.output)} tokens · {usage.calls} calls · ≈{usd(usage.cost)}
     </span>
   );
 }
@@ -223,7 +224,7 @@ export default function CheckPage({ params }: { params: Promise<{ id: string }> 
             {view.items.length === 0 ? (
               <p className="text-sm text-muted">Starting the agent…</p>
             ) : (
-              <Timeline view={view} checkId={id} onShow={show} />
+              <Timeline view={view} checkId={id} onShow={show} onTarget={giveFeedback} />
             )}
             <div ref={bottom} />
           </div>

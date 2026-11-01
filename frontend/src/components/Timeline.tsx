@@ -2,13 +2,14 @@
 
 import type { FeedbackTarget } from "@/lib/api";
 import { CheckView, Feedback, Item, Tool } from "@/lib/checkState";
+import { ChartBlock } from "./ChartBlock";
 import { Markdown } from "./Markdown";
 import { QuestionCard } from "./QuestionCard";
 
 /**
- * The activity stream: what the agent did, in order. Questions, agent notes and reviewer
- * feedback appear in full; charts, findings and the report appear as compact rows that jump
- * to their current version in the case file.
+ * The activity stream: what the agent did, in order. Questions, agent notes, reviewer feedback
+ * and charts appear in full, each chart version where the agent made it; findings and the
+ * report appear as compact rows that jump to their current version in the case file.
  */
 
 const TOOL_LABELS: Record<string, string> = {
@@ -111,7 +112,17 @@ function itemKey(item: Item): string {
   return "id" in item ? `${item.kind}:${item.id}` : `${item.kind}:${item.seq}`;
 }
 
-export function Timeline({ view, checkId, onShow }: { view: CheckView; checkId: string; onShow: OnShow }) {
+export function Timeline({
+  view,
+  checkId,
+  onShow,
+  onTarget,
+}: {
+  view: CheckView;
+  checkId: string;
+  onShow: OnShow;
+  onTarget?: OnTarget;
+}) {
   return (
     <div className="space-y-3">
       {view.items.map((item) => {
@@ -176,16 +187,28 @@ export function Timeline({ view, checkId, onShow }: { view: CheckView; checkId: 
               </Pointer>
             );
           }
-          case "chart":
+          case "chart": {
+            const latest = view.charts[item.chart.chart_id]?.version ?? item.chart.version;
+            const old = latest > item.chart.version;
             return (
-              <Pointer
-                key={key}
-                label="Chart"
-                title={item.chart.title}
-                meta={`${item.chart.chart_id} v${item.chart.version}`}
-                onView={() => onShow(`cf-${item.chart.chart_id}`)}
-              />
+              <div key={key} className={old ? "opacity-60" : ""}>
+                <ChartBlock
+                  chart={item.chart}
+                  onTarget={old ? undefined : onTarget}
+                  note={
+                    old && (
+                      <>
+                        Updated since: v{latest} ·{" "}
+                        <button onClick={() => onShow(`cf-${item.chart.chart_id}`)} className="text-accent hover:underline">
+                          View latest
+                        </button>
+                      </>
+                    )
+                  }
+                />
+              </div>
             );
+          }
           case "company":
             return (
               <div key={key} className="pl-1 text-sm text-muted">

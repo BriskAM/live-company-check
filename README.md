@@ -18,8 +18,11 @@ live streaming, interactive questions, pause/resume, feedback rounds and inline 
 | Questions | Single choice (ambiguous name), multiple choice and free text; answered once even on double click |
 | Pause / resume | Pause stops the agent within about a second, mid-sentence if need be; resume continues the text. Survives restarts of the API, worker and Temporal, and pauses of hours |
 | Feedback rounds | Send feedback any time (queued while busy); only work it affects is redone; repeats are no-ops; long sessions continue as new |
-| Visualization | Rating trend, news timeline, ratings by period, company comparison; computed from data, updated in place by feedback ("last 12 months", "mark the sale date") |
+| Visualization | Rating trend, news timeline, ratings by period, company comparison; the agent decides when to use them; each chart appears inline where it was made and is updated in place by feedback ("last 12 months", "mark the sale date") |
 | Failures | Retries with backoff, model fallback, plain error messages with Retry, graceful worker shutdown |
+| Going further | Report changes highlighted since the last version; tokens, calls and estimated cost per check in the header |
+
+Libraries beyond the core stack, and why, are listed in [docs/DECISIONS.md](docs/DECISIONS.md#libraries-beyond-the-core-stack).
 
 ```mermaid
 flowchart LR

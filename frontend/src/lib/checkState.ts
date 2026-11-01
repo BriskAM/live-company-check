@@ -1,3 +1,5 @@
+import { callCost } from "./pricing";
+
 /**
  * The check page is a pure fold over the server's event log.
  *
@@ -132,7 +134,7 @@ export type CheckView = {
   findings: Findings | null;
   charts: Record<string, Chart>; // latest version of each chart, in creation order
   completedOnce: boolean; // later runs are feedback rounds
-  usage: { calls: number; input: number; output: number; models: string[] };
+  usage: { calls: number; input: number; output: number; cost: number; models: string[] };
 };
 
 export const initialView: CheckView = {
@@ -150,7 +152,7 @@ export const initialView: CheckView = {
   findings: null,
   charts: {},
   completedOnce: false,
-  usage: { calls: 0, input: 0, output: 0, models: [] },
+  usage: { calls: 0, input: 0, output: 0, cost: 0, models: [] },
 };
 
 const STATUS_MARKERS: Record<string, { text: string; tone: "info" | "warn" | "error" }> = {
@@ -266,6 +268,7 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
         calls: view.usage.calls + 1,
         input: view.usage.input + (p.input_tokens ?? 0),
         output: view.usage.output + (p.output_tokens ?? 0),
+        cost: view.usage.cost + callCost(p.model, p.input_tokens ?? 0, p.output_tokens ?? 0),
         models: p.model && !view.usage.models.includes(p.model) ? [...view.usage.models, p.model] : view.usage.models,
       };
       break;

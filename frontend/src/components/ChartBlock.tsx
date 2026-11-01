@@ -175,8 +175,17 @@ function Body({ spec }: { spec: ChartSpec }) {
   }
 }
 
-/** The current version of a chart, as shown in the case file. */
-export function ChartBlock({ chart, onTarget }: { chart: Chart; onTarget?: (t: FeedbackTarget) => void }) {
+/** One version of a chart: inline in the activity stream where the agent made it, and the
+ * latest version in the case file. */
+export function ChartBlock({
+  chart,
+  onTarget,
+  note,
+}: {
+  chart: Chart;
+  onTarget?: (t: FeedbackTarget) => void;
+  note?: React.ReactNode;
+}) {
   return (
     <section className="rounded-md border border-line bg-card p-4">
       <div className="flex items-center gap-2">
@@ -196,6 +205,7 @@ export function ChartBlock({ chart, onTarget }: { chart: Chart; onTarget?: (t: F
           </button>
         )}
       </div>
+      {note && <div className="mt-1 text-[11px] text-muted">{note}</div>}
       <div className="mt-3">
         <Body spec={chart.spec} />
       </div>

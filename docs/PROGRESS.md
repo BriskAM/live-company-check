@@ -13,7 +13,8 @@
 | M6 | Feedback rounds: queue, patch tools, selective recompute, repeat dedupe, continue-as-new | Done |
 | M7 | Failure polish, full Compose stack, README, architecture diagrams | Done |
 | M8 | Frontend: split view (activity + case file), light/dark themes after amehta.space, progress steps, mobile tabs | Done |
-| Demo | Deck / video | On hold |
+| M9 | Pre-demo: request limiter, token and cost estimate, sample-check runner, fresh-clone Docker test, automated demo video | Done |
+| Demo | Automated video (`demo/`), narrated plan (`docs/DEMO.md`) | Done |
 
 ## Sample checks status
 
@@ -90,6 +91,11 @@ All five are driven end to end by `scripts/run_samples.py` (26/26 expectations m
 23. **Repeating an exclusion called the LLM again when the exclusion round had also edited
     concerns** (the agent dropped a concern and changed the recommendation with
     `update_findings`). The no-op rule now accepts those follow-on edits.
+
+24. **Charts were only in the case file after the M8 redesign**, while they belong
+    inline in the conversation where the agent made them. Each chart version is drawn
+    in the activity stream again (older versions dimmed, with a link to the latest); the
+    case file keeps the current one.
 
 ## Verified scenarios (live, Gemini)
 

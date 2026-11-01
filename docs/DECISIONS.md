@@ -147,8 +147,10 @@ process; several workers would need a shared limiter (Redis) or a paid tier.
 
 ### Token usage is an event
 After each LLM call the graph emits a `usage` event (model, tokens in/out). The header sums
-them, so the cost of a check and of each feedback round is visible without a separate
-metrics system, and it survives replay like everything else.
+them and estimates the cost at paid list prices (`frontend/src/lib/pricing.ts`), so the
+cost of a check and of each feedback round is visible without a separate metrics system,
+and it survives replay like everything else. The free-tier key we use costs nothing; the
+estimate shows what a paid key would pay.
 
 ### Validation instead of trust
 `submit_findings` rejects unknown or excluded evidence ids, and malformed tool calls are
@@ -248,6 +250,28 @@ browser calls the API directly, so the UI is built with the API's public address
 **Trade-off:** Temporal runs as the dev server with SQLite persistence: durable across
 restarts, but single-node. A production setup would use Temporal with Postgres or
 Temporal Cloud.
+
+## Libraries beyond the core stack
+
+The core stack is Python/FastAPI, LangGraph, Temporal, Postgres and Next.js. Everything else,
+and why:
+
+| Library | Why |
+|---|---|
+| `temporalio` | Official Temporal SDK (part of the stack, listed for completeness) |
+| `langgraph-checkpoint-postgres` | LangGraph's Postgres checkpointer: agent state lives in the same database, so a resumed run picks up exactly where it stopped |
+| `langchain-google-genai` | Gemini chat model with streaming and tool calling that LangGraph can drive; swapping provider is a change to `agent/llm.py` |
+| `sse-starlette` | Server-Sent Events for FastAPI with keep-alive pings and disconnect handling; SSE fits a one-way event stream and reconnects with `Last-Event-ID` |
+| `SQLAlchemy` + `Alembic` | Typed models and versioned migrations for the company data and the event log |
+| `psycopg` (with pool) | Raw SQL for the hot paths (event appends, LISTEN/NOTIFY) and the driver LangGraph's checkpointer needs |
+| `pydantic-settings` | Settings from `.env` with types and defaults, one place for every knob |
+| `uv` | Fast, locked Python installs; the same lockfile in development and Docker |
+| `pytest`, `pytest-asyncio`, `httpx`, `ruff` | Tests (incl. Temporal's time-skipping test server), an HTTP client for scripts, linting and formatting |
+| `recharts` | Charts in React with little code; the agent's specs map straight onto its line and reference-line components |
+| `react-markdown` + `remark-gfm` | Renders the streamed report safely (no raw HTML), with tables |
+| `tailwindcss` | Styling with theme tokens as CSS variables, so light and dark themes share one set of classes |
+| `vitest` | Unit tests for the event reducer without a browser |
+| `playwright-core` (demo only) | Drives the system Chrome to record the demo video; not used by the app |
 
 ## Testing
 - Unit tests for search, stats and company picking (seeded DB).

@@ -31,7 +31,7 @@ const RAW: [string, Record<string, unknown>][] = [
   ["status", { status: "completed" }],
   ["feedback", { id: "f2", text: "Last 12 months", target: null, queued: false }],
   ["feedback_result", { feedback_id: "f2", outcome: "duplicate", changes: [], message: "Already applied" }],
-  ["usage", { message_id: "analyst:5", model: "m", input_tokens: 100, output_tokens: 20 }],
+  ["usage", { message_id: "analyst:5", model: "gemini-3.5-flash-lite", input_tokens: 1000, output_tokens: 200 }],
 ];
 const EVENTS: CheckEvent[] = RAW.map(([type, payload], i) => ({ seq: i + 1, type, payload, ts: "" }));
 
@@ -75,7 +75,8 @@ describe("check view reducer", () => {
   it("tracks progress and token usage", () => {
     const v = fold(EVENTS);
     expect(progress(v).every((s) => s.state === "done")).toBe(true);
-    expect(v.usage).toEqual({ calls: 1, input: 100, output: 20, models: ["m"] });
+    expect(v.usage).toMatchObject({ calls: 1, input: 1000, output: 200, models: ["gemini-3.5-flash-lite"] });
+    expect(v.usage.cost).toBeCloseTo(0.0008); // 1000 × $0.30/M + 200 × $2.50/M
     const midway = fold(EVENTS.slice(0, 6));
     expect(progress(midway).map((s) => s.state)).toEqual(["done", "done", "active", "todo"]);
   });
