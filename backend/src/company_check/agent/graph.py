@@ -89,6 +89,15 @@ def _pick(query: str, candidates: list[dict[str, Any]]) -> dict[str, Any] | None
     return None
 
 
+def _company_card(c: dict[str, Any]) -> dict[str, Any]:
+    """What the UI shows about the company under check."""
+    card = {"company_id": c["id"], "name": c["name"]}
+    for k in ("status", "founded", "closed_on", "address", "previous_names"):
+        if c.get(k):
+            card[k] = c[k]
+    return card
+
+
 def _label(c: dict[str, Any]) -> str:
     closed = f", closed {c['closed_on']}" if c.get("closed_on") else ""
     return f"{c['name']} — {c['status']}{closed}, {c['address']} (founded {c['founded']})"
@@ -142,11 +151,7 @@ async def resolve(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str
 
     if chosen is None:  # answer didn't match an option; ask again on the next pass
         return {"candidates": candidates}
-    await sink.emit(
-        "company_selected",
-        {"company_id": chosen["id"], "name": chosen["name"]},
-        key=f"{key}:selected",
-    )
+    await sink.emit("company_selected", _company_card(chosen), key=f"{key}:selected")
     return {"candidates": candidates, "company": {"id": chosen["id"]}}
 
 
@@ -215,9 +220,7 @@ async def gather(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str,
 
     if reset:
         await sink.emit(
-            "company_selected",
-            {"company_id": company_id, "name": results["get_company"]["name"]},
-            key=f"{key}:selected",
+            "company_selected", _company_card(results["get_company"]), key=f"{key}:selected"
         )
     update = {
         **reset,

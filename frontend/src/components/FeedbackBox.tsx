@@ -45,9 +45,11 @@ export function FeedbackBox({
 
   const busy = status !== "completed";
   return (
-    <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-200 bg-[#f7f7f8]/95 backdrop-blur">
+    // Sticks to the bottom of the activity column (not the whole window, which also holds the
+    // case file on wide screens).
+    <div className="sticky bottom-0 z-10 -mx-4 border-t border-line bg-bg/95 backdrop-blur">
       <form
-        className="mx-auto max-w-3xl px-4 py-3"
+        className="px-4 py-3"
         onSubmit={(e) => {
           e.preventDefault();
           void send();
@@ -55,17 +57,18 @@ export function FeedbackBox({
       >
         {target && (
           <div className="mb-2 flex items-center gap-2 text-xs">
-            <span className="rounded bg-blue-50 px-2 py-0.5 text-blue-800">
+            <span className="rounded bg-accent/15 px-2 py-0.5 font-mono text-accent">
               About {target.kind}
               {target.id ? ` ${target.id}` : ""}
             </span>
-            <button type="button" onClick={onClearTarget} className="text-zinc-400 hover:text-zinc-700">
+            <button type="button" onClick={onClearTarget} className="text-muted hover:text-ink">
               clear
             </button>
           </div>
         )}
         <div className="flex items-end gap-2">
           <textarea
+            id="feedback-input"
             value={text}
             onChange={(e) => {
               setText(e.target.value);
@@ -81,17 +84,17 @@ export function FeedbackBox({
             placeholder={
               busy ? "Send feedback (handled when the agent is free)…" : "Give feedback or ask for a change…"
             }
-            className="max-h-40 min-h-[40px] flex-1 resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+            className="max-h-40 min-h-[40px] flex-1 resize-y rounded-md border border-line bg-card text-ink placeholder:text-muted outline-none focus:border-accent px-3 py-2 text-sm"
           />
           <button
             type="submit"
             disabled={sending || !text.trim()}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white disabled:opacity-40"
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-on-accent disabled:opacity-40"
           >
             {sending ? "Sending…" : "Send"}
           </button>
         </div>
-        {error && <p className="mt-1 text-xs text-red-600">Couldn’t send: {error}. Try again.</p>}
+        {error && <p className="mt-1 text-xs text-bad">Couldn’t send: {error}. Try again.</p>}
       </form>
     </div>
   );

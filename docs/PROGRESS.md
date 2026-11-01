@@ -12,7 +12,7 @@
 | M5 | Visualization tools (4), inline charts/tables, update-by-id | Done |
 | M6 | Feedback rounds: queue, patch tools, selective recompute, repeat dedupe, continue-as-new | Done |
 | M7 | Failure polish, full Compose stack, README, architecture diagrams | Done |
-| M8 | Frontend polish | Planned |
+| M8 | Frontend: split view (activity + case file), light/dark themes after amehta.space, progress steps, mobile tabs | Done |
 | Demo | Deck / video | On hold |
 
 ## Sample checks status
@@ -68,6 +68,10 @@
     plain reply in a feedback round); if it still can't, the error is not retried.
 16. **`docker stop` would kill the worker abruptly** (SIGTERM wasn't handled). The worker
     now shuts down gracefully, giving running agents 5 s.
+17. **Mobile layout overflowed sideways** (a grid column sized itself to its widest row).
+    Fixed with a `minmax(0, 1fr)` column; checked at 375 px.
+18. **Dracula's purple failed the chart lightness check on the dark card** (too light for a
+    line series). Charts use a validated `#a07af0` in dark mode, `#8250df` in light.
 
 ## Verified scenarios (live, Gemini)
 
@@ -98,7 +102,8 @@
   report, which is the long text, is continued.
 - Feedback sent while the agent is busy shows the agent's reply to an earlier feedback
   below it (events are shown in the order they happened). Clear enough with the
-  "Queued" / "Applied" note under each message, but a threaded view would read better.
+  "Queued" / "Applied" note under each message, and the case file always shows the
+  current state.
 - Report numbers can differ slightly between sections (e.g. 2.5 vs 2.63 after the sale):
   the change-point statistic and the period table split at slightly different dates.
 - On resume after a question, the graph re-emits the step's events; idempotency keys drop

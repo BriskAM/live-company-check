@@ -93,6 +93,16 @@ export type Chart = {
   spec: ChartSpec;
 };
 
+export type Company = {
+  company_id: string;
+  name: string;
+  status?: string;
+  founded?: string;
+  closed_on?: string;
+  address?: string;
+  previous_names?: string[];
+};
+
 export type Item =
   | { kind: "tool"; id: string }
   | { kind: "message"; id: string }
@@ -117,6 +127,10 @@ export type CheckView = {
   feedback: Record<string, Feedback>;
   latestFindings: number; // seq of the newest findings
   latestReport: string | null; // message id of the newest report
+  // Current state for the case file (the stream keeps the history).
+  company: Company | null;
+  findings: Findings | null;
+  charts: Record<string, Chart>; // latest version of each chart, in creation order
 };
 
 export const initialView: CheckView = {
@@ -130,6 +144,9 @@ export const initialView: CheckView = {
   feedback: {},
   latestFindings: 0,
   latestReport: null,
+  company: null,
+  findings: null,
+  charts: {},
 };
 
 const STATUS_MARKERS: Record<string, { text: string; tone: "info" | "warn" | "error" }> = {
@@ -217,11 +234,13 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       const chart = p as Chart;
       v.items = [...v.items, { kind: "chart", seq: e.seq, chart }];
       v.latestChart = { ...view.latestChart, [chart.chart_id]: chart.version };
+      v.charts = { ...view.charts, [chart.chart_id]: chart };
       break;
     }
     case "findings":
       v.items = [...v.items, { kind: "findings", seq: e.seq, findings: p as Findings }];
       v.latestFindings = e.seq;
+      v.findings = p as Findings;
       break;
     case "feedback":
       if (!view.feedback[p.id]) {
@@ -242,6 +261,13 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       break;
     case "company_selected":
       v.items = [...v.items, { kind: "company", seq: e.seq, name: p.name }];
+      // A different company resets what the case file shows.
+      if (view.company && view.company.company_id !== p.company_id) {
+        v.findings = null;
+        v.charts = {};
+        v.latestReport = null;
+      }
+      v.company = p as Company;
       break;
   }
   return v;
@@ -249,4 +275,24 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
 
 function kindOf(messageId: string): Message["kind"] {
   return messageId.startsWith("report:") ? "report" : "agent";
+}
+
+export type Step = { label: string; state: "done" | "active" | "todo" };
+
+/** The four phases of a check, for the header. */
+export function progress(view: CheckView): Step[] {
+  const tools = Object.values(view.tools);
+  const report = view.latestReport ? view.messages[view.latestReport] : undefined;
+  const done = [
+    view.company !== null,
+    tools.some((t) => t.name === "get_news" && t.status === "finished"),
+    view.findings !== null,
+    !!report?.done,
+  ];
+  const labels = ["Find company", "Gather data", "Analyse", "Write report"];
+  const firstOpen = done.indexOf(false);
+  return labels.map((label, i) => ({
+    label,
+    state: done[i] ? "done" : i === firstOpen ? "active" : "todo",
+  }));
 }

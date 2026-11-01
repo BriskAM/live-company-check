@@ -206,6 +206,26 @@ Keeps Temporal history small for long review sessions. The new run carries the q
 last 500 command ids (so late repeats are still recognised); the agent's own state is in the
 LangGraph checkpoint and isn't affected.
 
+## Interface
+
+### Activity on the left, the answer on the right
+The check page splits into the activity stream (what the agent did, questions, feedback,
+in order) and a case file (company, findings, charts, report, always at their latest
+version). The stream shows charts, findings and the report as compact rows that jump to the
+case file, so many feedback rounds never bury the current answer. While the report is being
+written, its row shows the live tail of the text. On narrow screens the two become tabs.
+
+### Look: after amehta.space
+GitHub-light and Dracula-dark tokens, monospace headings and labels, a purple accent and
+bordered cards, defined once as CSS variables, so every component works in both themes. The
+theme follows the OS until the reviewer picks one. Body text stays in a proportional font
+for reading long reports.
+
+### Charts follow the theme, with validated colors
+Recharts takes colors as SVG attributes, where CSS variables don't apply, so chart colors
+are read from the tokens and refreshed on theme change. The series color was checked with
+the dataviz palette validator against each theme's card surface.
+
 ## Deployment
 
 ### One Compose file, two modes
