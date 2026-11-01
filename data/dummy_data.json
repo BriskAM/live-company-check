@@ -1,0 +1,1413 @@
+{
+  "companies": [
+    {
+      "id": "cmp_001",
+      "name": "Brightline Logistics Ltd",
+      "status": "active",
+      "founded": "2014-03-11",
+      "closed_on": null,
+      "address": "14 Quay Road, Port Ellery",
+      "previous_names": [],
+      "reviews": [
+        {
+          "id": "ev_rev_001_01",
+          "date": "2025-05-24",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_001_02",
+          "date": "2025-06-05",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_001_03",
+          "date": "2025-07-03",
+          "rating": 2,
+          "text": "New management, and it shows. Not the same company."
+        },
+        {
+          "id": "ev_rev_001_04",
+          "date": "2025-08-01",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_001_05",
+          "date": "2025-08-08",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_001_06",
+          "date": "2025-09-07",
+          "rating": 2,
+          "text": "Cancelled at the last minute with no explanation."
+        },
+        {
+          "id": "ev_rev_001_07",
+          "date": "2025-10-15",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_001_08",
+          "date": "2025-10-26",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_001_09",
+          "date": "2025-11-11",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_001_10",
+          "date": "2025-12-25",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_001_11",
+          "date": "2026-01-13",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_001_12",
+          "date": "2026-02-20",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_001_13",
+          "date": "2026-02-24",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_001_14",
+          "date": "2026-03-03",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_001_15",
+          "date": "2026-04-07",
+          "rating": 2,
+          "text": "Cancelled at the last minute with no explanation."
+        },
+        {
+          "id": "ev_rev_001_16",
+          "date": "2026-04-02",
+          "rating": 5,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_001_17",
+          "date": "2026-05-03",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_001_18",
+          "date": "2026-06-09",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_001_19",
+          "date": "2026-07-12",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_001_20",
+          "date": "2026-07-22",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_001_21",
+          "date": "2026-08-21",
+          "rating": 2,
+          "text": "Quality has dropped a lot recently."
+        },
+        {
+          "id": "ev_rev_001_22",
+          "date": "2026-09-15",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_001_23",
+          "date": "2026-10-08",
+          "rating": 2,
+          "text": "Cancelled at the last minute with no explanation."
+        },
+        {
+          "id": "ev_rev_001_24",
+          "date": "2026-10-27",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        }
+      ],
+      "news": [
+        {
+          "id": "ev_news_001_01",
+          "date": "2025-09-02",
+          "headline": "Brightline Logistics Ltd opens second warehouse",
+          "text": "The Port Ellery firm says the new site will cut delivery times for northern customers."
+        },
+        {
+          "id": "ev_news_001_02",
+          "date": "2026-02-17",
+          "headline": "Winter storms delay regional deliveries",
+          "text": "Several carriers, including Brightline Logistics Ltd, reported delays of up to a week."
+        },
+        {
+          "id": "ev_news_001_03",
+          "date": "2026-08-05",
+          "headline": "Brightline signs three-year contract with retail chain",
+          "text": "The company will handle store deliveries for Maple & Finch across the region."
+        }
+      ]
+    },
+    {
+      "id": "cmp_002",
+      "name": "Brightline Logistics Inc",
+      "status": "closed",
+      "founded": "2006-07-01",
+      "closed_on": "2019-11-30",
+      "address": "88 Mill Street, Ashby",
+      "previous_names": [],
+      "reviews": [],
+      "news": [
+        {
+          "id": "ev_news_002_01",
+          "date": "2019-10-14",
+          "headline": "Brightline Logistics Inc enters administration",
+          "text": "The Ashby-based haulier ceased trading after losing its two largest customers."
+        }
+      ]
+    },
+    {
+      "id": "cmp_003",
+      "name": "Brightlane Logistics",
+      "status": "active",
+      "founded": "2021-01-20",
+      "closed_on": null,
+      "address": "3 Harbour View, Port Ellery",
+      "previous_names": [],
+      "reviews": [
+        {
+          "id": "ev_rev_003_01",
+          "date": "2026-03-09",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_003_02",
+          "date": "2026-05-21",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_003_03",
+          "date": "2026-06-05",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_003_04",
+          "date": "2026-09-19",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        }
+      ],
+      "news": []
+    },
+    {
+      "id": "cmp_004",
+      "name": "Northwind Dental Supplies",
+      "status": "active",
+      "founded": "2011-05-09",
+      "closed_on": null,
+      "address": "Unit 7, Kestrel Park, Dunmore",
+      "previous_names": [],
+      "reviews": [
+        {
+          "id": "ev_rev_004_01",
+          "date": "2025-04-05",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_004_02",
+          "date": "2025-04-03",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_004_03",
+          "date": "2025-05-21",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_004_04",
+          "date": "2025-06-03",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_004_05",
+          "date": "2025-06-20",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_004_06",
+          "date": "2025-07-28",
+          "rating": 3,
+          "text": "Fine overall, but communication could be better."
+        },
+        {
+          "id": "ev_rev_004_07",
+          "date": "2025-07-22",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_004_08",
+          "date": "2025-08-04",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_004_09",
+          "date": "2025-08-06",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_004_10",
+          "date": "2025-09-17",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_004_11",
+          "date": "2025-10-27",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_004_12",
+          "date": "2025-11-12",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_004_13",
+          "date": "2025-12-11",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_004_14",
+          "date": "2026-01-12",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_004_15",
+          "date": "2026-02-08",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_004_16",
+          "date": "2026-03-24",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_004_17",
+          "date": "2026-04-25",
+          "rating": 3,
+          "text": "Good work, though it took longer than promised."
+        },
+        {
+          "id": "ev_rev_004_18",
+          "date": "2026-05-18",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_004_19",
+          "date": "2026-06-28",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_004_20",
+          "date": "2026-06-18",
+          "rating": 5,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_004_21",
+          "date": "2026-07-13",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_004_22",
+          "date": "2026-08-17",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_004_23",
+          "date": "2026-08-08",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_004_24",
+          "date": "2026-09-01",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        }
+      ],
+      "news": [
+        {
+          "id": "ev_news_004_01",
+          "date": "2025-06-21",
+          "headline": "Northwind Dental Supplies wins regional supplier award",
+          "text": "The distributor was recognised for fast delivery to independent practices."
+        },
+        {
+          "id": "ev_news_004_02",
+          "date": "2025-12-03",
+          "headline": "Northwind Dental Clinic faces patient complaint lawsuit",
+          "text": "Three former patients of the Dunmore clinic have filed a claim over treatment delays. The clinic is not connected to any supplier of the same name."
+        },
+        {
+          "id": "ev_news_004_03",
+          "date": "2026-03-15",
+          "headline": "Northwind Dental Supplies launches next-day ordering",
+          "text": "Practices can now order before 6pm for delivery the next morning."
+        },
+        {
+          "id": "ev_news_004_04",
+          "date": "2026-07-29",
+          "headline": "Health inspectors issue warning to Northwind Dental Clinic",
+          "text": "Inspectors found record-keeping problems at the clinic on Bridge Street."
+        }
+      ]
+    },
+    {
+      "id": "cmp_005",
+      "name": "Northwind Dental Clinic",
+      "status": "active",
+      "founded": "2016-09-01",
+      "closed_on": null,
+      "address": "41 Bridge Street, Dunmore",
+      "previous_names": [],
+      "reviews": [],
+      "news": []
+    },
+    {
+      "id": "cmp_006",
+      "name": "Pinecrest Home Services",
+      "status": "active",
+      "founded": "2009-02-14",
+      "closed_on": null,
+      "address": "220 Elm Avenue, Larkford",
+      "previous_names": [],
+      "reviews": [
+        {
+          "id": "ev_rev_006_01",
+          "date": "2024-11-19",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_006_02",
+          "date": "2024-11-03",
+          "rating": 5,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_006_03",
+          "date": "2024-11-08",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_006_04",
+          "date": "2024-12-03",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_006_05",
+          "date": "2025-01-22",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_06",
+          "date": "2025-02-24",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_006_07",
+          "date": "2025-03-08",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_08",
+          "date": "2025-03-07",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_006_09",
+          "date": "2025-03-22",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_10",
+          "date": "2025-04-14",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_11",
+          "date": "2025-04-22",
+          "rating": 5,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_006_12",
+          "date": "2025-05-02",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_13",
+          "date": "2025-05-26",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_006_14",
+          "date": "2025-05-07",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_006_15",
+          "date": "2025-06-05",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_16",
+          "date": "2025-06-09",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_17",
+          "date": "2025-06-28",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_006_18",
+          "date": "2025-07-02",
+          "rating": 5,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_006_19",
+          "date": "2025-07-03",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_006_20",
+          "date": "2025-08-16",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_21",
+          "date": "2025-09-02",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_006_22",
+          "date": "2025-10-13",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_006_23",
+          "date": "2025-10-10",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_24",
+          "date": "2025-11-05",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_006_25",
+          "date": "2025-11-07",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_006_26",
+          "date": "2025-11-24",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_006_27",
+          "date": "2025-12-19",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_006_28",
+          "date": "2026-01-02",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_006_29",
+          "date": "2026-01-28",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_006_30",
+          "date": "2026-01-20",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_006_31",
+          "date": "2026-02-13",
+          "rating": 2,
+          "text": "Missed the agreed date and nobody called us back."
+        },
+        {
+          "id": "ev_rev_006_32",
+          "date": "2026-02-08",
+          "rating": 3,
+          "text": "Fine overall, but communication could be better."
+        },
+        {
+          "id": "ev_rev_006_33",
+          "date": "2026-02-03",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_006_34",
+          "date": "2026-03-19",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_006_35",
+          "date": "2026-03-07",
+          "rating": 2,
+          "text": "Cancelled at the last minute with no explanation."
+        },
+        {
+          "id": "ev_rev_006_36",
+          "date": "2026-03-08",
+          "rating": 2,
+          "text": "Had to chase them three times for an update."
+        },
+        {
+          "id": "ev_rev_006_37",
+          "date": "2026-04-22",
+          "rating": 2,
+          "text": "Cancelled at the last minute with no explanation."
+        },
+        {
+          "id": "ev_rev_006_38",
+          "date": "2026-04-15",
+          "rating": 2,
+          "text": "Had to chase them three times for an update."
+        },
+        {
+          "id": "ev_rev_006_39",
+          "date": "2026-05-15",
+          "rating": 3,
+          "text": "Fine overall, but communication could be better."
+        },
+        {
+          "id": "ev_rev_006_40",
+          "date": "2026-06-07",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_006_41",
+          "date": "2026-07-03",
+          "rating": 2,
+          "text": "Quality has dropped a lot recently."
+        },
+        {
+          "id": "ev_rev_006_42",
+          "date": "2026-08-06",
+          "rating": 2,
+          "text": "Billing mistake that took weeks to fix."
+        },
+        {
+          "id": "ev_rev_006_43",
+          "date": "2026-08-23",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_006_44",
+          "date": "2026-09-01",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_006_45",
+          "date": "2026-09-05",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_006_46",
+          "date": "2026-09-04",
+          "rating": 3,
+          "text": "Good work, though it took longer than promised."
+        },
+        {
+          "id": "ev_rev_006_47",
+          "date": "2026-10-20",
+          "rating": 2,
+          "text": "Quality has dropped a lot recently."
+        },
+        {
+          "id": "ev_rev_006_48",
+          "date": "2026-10-07",
+          "rating": 2,
+          "text": "Cancelled at the last minute with no explanation."
+        }
+      ],
+      "news": [
+        {
+          "id": "ev_news_006_01",
+          "date": "2025-04-10",
+          "headline": "Pinecrest Home Services marks 15 years in Larkford",
+          "text": "The plumbing and heating firm now employs 40 local staff."
+        },
+        {
+          "id": "ev_news_006_02",
+          "date": "2026-01-22",
+          "headline": "Pinecrest Home Services sold to national group",
+          "text": "Founder Dana Reyes has sold the business to Cobalt Home Group."
+        },
+        {
+          "id": "ev_news_006_03",
+          "date": "2026-05-08",
+          "headline": "Customers report long waits for Pinecrest repairs",
+          "text": "Several residents say emergency call-outs now take days rather than hours."
+        }
+      ]
+    },
+    {
+      "id": "cmp_007",
+      "name": "Copperleaf Software",
+      "status": "active",
+      "founded": "2017-06-30",
+      "closed_on": null,
+      "address": "Floor 4, 9 Canal Wharf, Brennick",
+      "previous_names": [
+        "Leafline Apps"
+      ],
+      "reviews": [
+        {
+          "id": "ev_rev_007_01",
+          "date": "2024-10-17",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_007_02",
+          "date": "2024-10-28",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_03",
+          "date": "2024-10-21",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_007_04",
+          "date": "2024-11-01",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_05",
+          "date": "2024-11-21",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_06",
+          "date": "2024-12-18",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_007_07",
+          "date": "2025-01-04",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_08",
+          "date": "2025-01-18",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_09",
+          "date": "2025-01-19",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_007_10",
+          "date": "2025-02-05",
+          "rating": 3,
+          "text": "Fine overall, but communication could be better."
+        },
+        {
+          "id": "ev_rev_007_11",
+          "date": "2025-03-26",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_12",
+          "date": "2025-03-07",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_007_13",
+          "date": "2025-04-12",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_007_14",
+          "date": "2025-05-24",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_007_15",
+          "date": "2025-05-28",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_007_16",
+          "date": "2025-06-01",
+          "rating": 3,
+          "text": "Good work, though it took longer than promised."
+        },
+        {
+          "id": "ev_rev_007_17",
+          "date": "2025-07-26",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_007_18",
+          "date": "2025-07-09",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_007_19",
+          "date": "2025-07-13",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_20",
+          "date": "2025-08-07",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_007_21",
+          "date": "2025-08-10",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_007_22",
+          "date": "2025-09-22",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_007_23",
+          "date": "2025-10-09",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_24",
+          "date": "2025-10-12",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_007_25",
+          "date": "2025-11-22",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_007_26",
+          "date": "2025-11-04",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_27",
+          "date": "2025-11-19",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_28",
+          "date": "2025-12-20",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_007_29",
+          "date": "2026-01-14",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_007_30",
+          "date": "2026-01-04",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_007_31",
+          "date": "2026-02-09",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_32",
+          "date": "2026-02-01",
+          "rating": 3,
+          "text": "Good work, though it took longer than promised."
+        },
+        {
+          "id": "ev_rev_007_33",
+          "date": "2026-02-14",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_007_34",
+          "date": "2026-03-20",
+          "rating": 4,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_35",
+          "date": "2026-03-24",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_36",
+          "date": "2026-03-10",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_007_37",
+          "date": "2026-04-13",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_007_38",
+          "date": "2026-04-18",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_007_39",
+          "date": "2026-05-22",
+          "rating": 3,
+          "text": "Mostly okay, one small mix-up that they fixed."
+        },
+        {
+          "id": "ev_rev_007_40",
+          "date": "2026-06-20",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_007_41",
+          "date": "2026-06-13",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_007_42",
+          "date": "2026-06-10",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_007_43",
+          "date": "2026-07-26",
+          "rating": 3,
+          "text": "Decent service, a bit expensive."
+        },
+        {
+          "id": "ev_rev_007_44",
+          "date": "2026-08-15",
+          "rating": 3,
+          "text": "Good work, though it took longer than promised."
+        },
+        {
+          "id": "ev_rev_007_45",
+          "date": "2026-08-16",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_007_46",
+          "date": "2026-09-10",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        }
+      ],
+      "news": [
+        {
+          "id": "ev_news_007_01",
+          "date": "2022-04-12",
+          "headline": "Leafline Apps raises funding to grow team",
+          "text": "The Brennick start-up plans to double its staff."
+        },
+        {
+          "id": "ev_news_007_02",
+          "date": "2023-03-02",
+          "headline": "Leafline Apps confirms customer data was exposed",
+          "text": "The company says email addresses of about 12,000 users were accessible for two weeks."
+        },
+        {
+          "id": "ev_news_007_03",
+          "date": "2023-09-18",
+          "headline": "Leafline Apps rebrands as Copperleaf Software",
+          "text": "The new name reflects a shift towards business customers."
+        },
+        {
+          "id": "ev_news_007_04",
+          "date": "2025-11-04",
+          "headline": "Copperleaf Software releases scheduling product",
+          "text": "The tool is aimed at small service businesses."
+        },
+        {
+          "id": "ev_news_007_05",
+          "date": "2026-06-23",
+          "headline": "Copperleaf Software named in top 50 growing firms",
+          "text": "Revenue grew strongly for a second year."
+        }
+      ]
+    },
+    {
+      "id": "cmp_008",
+      "name": "Copperleaf Studio",
+      "status": "active",
+      "founded": "2020-02-02",
+      "closed_on": null,
+      "address": "12 Station Lane, Wexmoor",
+      "previous_names": [],
+      "reviews": [],
+      "news": []
+    },
+    {
+      "id": "cmp_009",
+      "name": "Harborview Catering Co",
+      "status": "closed",
+      "founded": "2012-08-19",
+      "closed_on": "2026-05-31",
+      "address": "5 Ferry Steps, Saltmouth",
+      "previous_names": [],
+      "reviews": [
+        {
+          "id": "ev_rev_009_01",
+          "date": "2025-07-27",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_02",
+          "date": "2025-07-10",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_03",
+          "date": "2025-08-01",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_009_04",
+          "date": "2025-09-20",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_009_05",
+          "date": "2025-10-21",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_009_06",
+          "date": "2025-10-23",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_009_07",
+          "date": "2025-11-13",
+          "rating": 5,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_08",
+          "date": "2025-11-21",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_009_09",
+          "date": "2025-12-25",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_009_10",
+          "date": "2026-01-26",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_009_11",
+          "date": "2026-02-18",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_12",
+          "date": "2026-02-15",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_13",
+          "date": "2026-03-17",
+          "rating": 4,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_009_14",
+          "date": "2026-03-11",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_009_15",
+          "date": "2026-04-15",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_16",
+          "date": "2026-04-28",
+          "rating": 4,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_009_17",
+          "date": "2026-05-25",
+          "rating": 4,
+          "text": "Friendly team and quick replies."
+        },
+        {
+          "id": "ev_rev_009_18",
+          "date": "2026-05-09",
+          "rating": 5,
+          "text": "They solved our problem the same day."
+        },
+        {
+          "id": "ev_rev_009_19",
+          "date": "2026-06-08",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_009_20",
+          "date": "2026-06-03",
+          "rating": 4,
+          "text": "Professional from start to finish."
+        },
+        {
+          "id": "ev_rev_009_21",
+          "date": "2026-07-09",
+          "rating": 5,
+          "text": "Great service, would use again."
+        },
+        {
+          "id": "ev_rev_009_22",
+          "date": "2026-07-18",
+          "rating": 4,
+          "text": "Very reliable, everything arrived on time."
+        },
+        {
+          "id": "ev_rev_009_23",
+          "date": "2026-08-08",
+          "rating": 5,
+          "text": "Clear pricing and no surprises."
+        },
+        {
+          "id": "ev_rev_009_24",
+          "date": "2026-09-07",
+          "rating": 5,
+          "text": "Very reliable, everything arrived on time."
+        }
+      ],
+      "news": [
+        {
+          "id": "ev_news_009_01",
+          "date": "2026-04-28",
+          "headline": "Harborview Catering Co to close after 14 years",
+          "text": "The owners say rising costs made the business unsustainable."
+        },
+        {
+          "id": "ev_news_009_02",
+          "date": "2026-07-12",
+          "headline": "Former Harborview team relaunches catering business",
+          "text": "Two former managers say they are trading under the Harborview name while new company papers are filed."
+        },
+        {
+          "id": "ev_news_009_03",
+          "date": "2026-09-03",
+          "headline": "Saltmouth food festival thanks Harborview for catering",
+          "text": "Organisers praised the team for serving 2,000 guests."
+        }
+      ]
+    }
+  ],
+  "sample_checks": [
+    {
+      "id": "check_1",
+      "reviewer_input": "Brightline Logistics",
+      "what_this_tests": "The agent asking a single-choice question when the name is ambiguous",
+      "follow_ups": [
+        {
+          "step": 1,
+          "type": "expect",
+          "detail": "The agent finds three similar names and asks the reviewer to pick one, shown as clickable options."
+        },
+        {
+          "step": 2,
+          "type": "answer",
+          "detail": "Choose Brightline Logistics Ltd (cmp_001)."
+        },
+        {
+          "step": 3,
+          "type": "message",
+          "detail": "Show me how their review ratings have changed month by month."
+        },
+        {
+          "step": 4,
+          "type": "action",
+          "detail": "Pause while the agent is writing the report. Wait a minute, then resume."
+        },
+        {
+          "step": 5,
+          "type": "message",
+          "detail": "Actually, I meant the Inc one. Redo the check for that company."
+        }
+      ]
+    },
+    {
+      "id": "check_2",
+      "reviewer_input": "Northwind Dental Supplies",
+      "what_this_tests": "Feedback on evidence that belongs to a different company",
+      "follow_ups": [
+        {
+          "step": 1,
+          "type": "expect",
+          "detail": "The agent's concerns may include the lawsuit and the health inspection."
+        },
+        {
+          "step": 2,
+          "type": "message",
+          "detail": "ev_news_004_02 and ev_news_004_04 are about the dental clinic, not this company. Leave them out."
+        },
+        {
+          "step": 3,
+          "type": "expect",
+          "detail": "The concerns and report are updated without those articles. Work the feedback didn't affect isn't redone."
+        },
+        {
+          "step": 4,
+          "type": "message",
+          "detail": "Put the remaining news on a timeline."
+        },
+        {
+          "step": 5,
+          "type": "action",
+          "detail": "Send the same feedback from step 2 again, twice in a row."
+        }
+      ]
+    },
+    {
+      "id": "check_3",
+      "reviewer_input": "Pinecrest Home Services",
+      "what_this_tests": "Visualization tools and feedback on a chart",
+      "follow_ups": [
+        {
+          "step": 1,
+          "type": "expect",
+          "detail": "The agent notices the drop in ratings and shows it in a chart without being asked."
+        },
+        {
+          "step": 2,
+          "type": "message",
+          "detail": "Only show the last 12 months on that chart."
+        },
+        {
+          "step": 3,
+          "type": "message",
+          "detail": "Mark the date the company was sold on the chart."
+        },
+        {
+          "step": 4,
+          "type": "action",
+          "detail": "Refresh the browser while the chart and report are being written."
+        },
+        {
+          "step": 5,
+          "type": "message",
+          "detail": "Compare the average rating before and after the sale in a table."
+        }
+      ]
+    },
+    {
+      "id": "check_4",
+      "reviewer_input": "Copperleaf Software",
+      "what_this_tests": "Pause and resume during long output, and restarts",
+      "follow_ups": [
+        {
+          "step": 1,
+          "type": "expect",
+          "detail": "Lots of reviews make for a long piece of streamed output."
+        },
+        {
+          "step": 2,
+          "type": "action",
+          "detail": "Pause halfway through the agent's output. Restart your backend and worker. Then resume."
+        },
+        {
+          "step": 3,
+          "type": "message",
+          "detail": "Did you check news under the company's previous name?"
+        },
+        {
+          "step": 4,
+          "type": "expect",
+          "detail": "The agent includes the 2023 data exposure under the name Leafline Apps."
+        },
+        {
+          "step": 5,
+          "type": "action",
+          "detail": "Leave the check paused for several hours (or simulate it), then resume."
+        }
+      ]
+    },
+    {
+      "id": "check_5",
+      "reviewer_input": "Harborview Catering",
+      "what_this_tests": "Multiple-choice and free-text questions, and many feedback rounds",
+      "follow_ups": [
+        {
+          "step": 1,
+          "type": "expect",
+          "detail": "The records say closed, but recent reviews and news say the team is still trading. The agent asks which sources to rely on, as a multiple-choice question."
+        },
+        {
+          "step": 2,
+          "type": "answer",
+          "detail": "Select reviews and news, but not company records."
+        },
+        {
+          "step": 3,
+          "type": "expect",
+          "detail": "The agent asks a free-text question, such as what the reviewer wants to know about the relaunch."
+        },
+        {
+          "step": 4,
+          "type": "answer",
+          "detail": "Whether the new business is a separate legal company."
+        },
+        {
+          "step": 5,
+          "type": "action",
+          "detail": "Give 10 or more rounds of short feedback on the report, one after another, to test long sessions."
+        }
+      ]
+    }
+  ]
+}
