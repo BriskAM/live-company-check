@@ -129,6 +129,16 @@ All models are created in `agent/llm.py`; switching provider is a change to that
 to `error` with the message and waits for the reviewer's Retry. Overloads (503), rate limits
 (429) and timeouts keep the normal retry policy with backoff.
 
+### Errors the reviewer can act on
+Failures are mapped to a short message saying what to do (wait for the rate limit, fix the
+key, retry); the raw error is kept, shortened, behind "Details". While Temporal retries a
+failed run, the timeline says "Recovering from a temporary problem" so a quiet stretch has
+an explanation.
+
+### The turn limit forces a finish instead of failing
+After 8 analyst turns the model is offered only `submit_findings` (forced tool choice) or, in
+a feedback round, no tools. Failing outright would be retried into the same wall.
+
 ### Validation instead of trust
 `submit_findings` rejects unknown or excluded evidence ids, and malformed tool calls are
 returned to the model with the error so it can fix them. A turn limit stops loops.
@@ -195,6 +205,18 @@ shorter" again) go to the model on purpose.
 Keeps Temporal history small for long review sessions. The new run carries the queue and the
 last 500 command ids (so late repeats are still recognised); the agent's own state is in the
 LangGraph checkpoint and isn't affected.
+
+## Deployment
+
+### One Compose file, two modes
+`docker compose up -d` starts Postgres and Temporal for development (API, worker and UI run
+on the host with reloads). `--profile app` adds a one-shot `migrate` service (migrations +
+seed), the API, the worker and the UI, from one backend image and one frontend image. The
+browser calls the API directly, so the UI is built with the API's public address.
+
+**Trade-off:** Temporal runs as the dev server with SQLite persistence: durable across
+restarts, but single-node. A production setup would use Temporal with Postgres or
+Temporal Cloud.
 
 ## Testing
 - Unit tests for search, stats and company picking (seeded DB).
