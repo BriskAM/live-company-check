@@ -449,18 +449,24 @@ def _norm(feedback: dict[str, Any]) -> str:
     return f"{feedback.get('target') or ''}|{' '.join(text.split())}"
 
 
+EXCLUSION_OPS = {"exclude_evidence", "update_findings"}
+
+
 def _already_applied(state: CheckState, norm: str) -> bool:
     """True when repeating this feedback cannot change anything:
     - it is the same as the last applied feedback (nothing has changed since), or
-    - an earlier identical feedback only excluded evidence, and all of it is still excluded
-      (exclusions are never undone, so later rounds cannot have reversed it)."""
+    - an earlier identical feedback excluded evidence, and all of it is still excluded
+      (exclusions are never undone, so later rounds cannot have reversed it). Concern and
+      recommendation edits made in that round are allowed: they follow from the exclusion
+      rather than being separate requests."""
     applied = [f for f in state.get("feedback_log", []) if f.get("outcome") == "applied"]
     if applied and applied[-1]["norm"] == norm:
         return True
     excluded = set(state.get("excluded_ids", []))
     return any(
         f["norm"] == norm
-        and f.get("ops") == ["exclude_evidence"]
+        and "exclude_evidence" in f.get("ops", [])
+        and set(f["ops"]) <= EXCLUSION_OPS
         and f.get("excluded")
         and set(f["excluded"]) <= excluded
         for f in applied

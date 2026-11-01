@@ -236,6 +236,12 @@ def test_repeat_of_an_earlier_exclusion_is_a_no_op_even_after_other_feedback():
     # A repeated chart request after other changes is not assumed to be a no-op.
     other = {"norm": "|x", "outcome": "applied", "ops": ["update_findings"]}
     assert not graph._already_applied({**state, "feedback_log": [chart, other]}, "|timeline please")
+    # The exclusion round also tidied concerns: still a no-op to repeat.
+    tidy = {**exclude, "ops": ["exclude_evidence", "update_findings"]}
+    assert graph._already_applied({**state, "feedback_log": [tidy, chart]}, "|leave out n1")
+    # But not if that round also did something else, like rewriting the report on request.
+    mixed = {**exclude, "ops": ["exclude_evidence", "revise_report"]}
+    assert not graph._already_applied({**state, "feedback_log": [mixed, chart]}, "|leave out n1")
 
 
 async def test_chart_update_that_changes_nothing_keeps_the_version():

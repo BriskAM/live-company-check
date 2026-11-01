@@ -84,6 +84,13 @@ All five are driven end to end by `scripts/run_samples.py` (26/26 expectations m
 21. **"Check complete" repeated after every feedback round**; only the first is shown now,
     and the header progress shows a "Feedback round" step while one runs.
 
+22. **A fresh clone failed to build the frontend image**: the Dockerfile copied `public/`,
+    which is empty and so not in git. Found by cloning the public repo into an empty folder
+    and running `docker compose --profile app up --build`; the copy is removed.
+23. **Repeating an exclusion called the LLM again when the exclusion round had also edited
+    concerns** (the agent dropped a concern and changed the recommendation with
+    `update_findings`). The no-op rule now accepts those follow-on edits.
+
 ## Verified scenarios (live, Gemini)
 
 | Scenario | Result |
@@ -97,6 +104,7 @@ All five are driven end to end by `scripts/run_samples.py` (26/26 expectations m
 | SIGTERM to the worker while the report streams | Graceful shutdown let the run finish; visible report == final report |
 | `kill -9` of the worker in a feedback round | "Recovering from a temporary problem (attempt 2)" shown; round and the queued next one completed |
 | Full stack via `docker compose --profile app up` | Migrate + seed, check + feedback round, UI all from containers |
+| Fresh clone of the public repo + `.env`, `docker compose --profile app up --build` | Built and seeded after fix 22; `run_samples.py` against the containers 24/26, then 26/26 after fix 23 |
 | `scripts/run_samples.py` (all five sample checks) | 26/26 pass, including a pause caught from the live stream and 11 report rounds in a row |
 | 10 feedback messages in one burst | Queued, handled one by one, workflow continued as new after 8 rounds; dedupe of old command ids survives it (workflow test) |
 
