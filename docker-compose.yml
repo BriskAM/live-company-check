@@ -1,5 +1,22 @@
-# Infrastructure for local development. The API, worker and frontend run on the host
-# during development (fast reloads); they are added as services for the full demo later.
+# Two ways to run:
+#   docker compose up -d                  infrastructure only (Postgres, Temporal); run the
+#                                         API, worker and UI on the host for fast reloads
+#   docker compose --profile app up -d    everything, including API, worker and UI
+# Both need GOOGLE_API_KEY in .env.
+
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  image: live-company-check-backend
+  profiles: ["app"]
+  env_file: .env
+  environment:
+    # Inside the Compose network; these override the host-oriented values in .env.
+    DATABASE_URL: postgresql+psycopg://app:app@postgres:5432/company_check
+    TEMPORAL_ADDRESS: temporal:7233
+    CORS_ORIGINS: '["http://localhost:3000"]'
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -28,6 +45,47 @@ services:
       - "8233:8233"
     volumes:
       - temporaldata:/data
+
+  migrate:
+    <<: *backend
+    # Create/upgrade tables and load the companies (idempotent), then exit.
+    command: ["sh", "-c", "alembic upgrade head && python -m company_check.seed"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    ports:
+      - "8000:8000"
+    restart: unless-stopped  # also covers Temporal still starting up
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      temporal:
+        condition: service_started
+
+  worker:
+    <<: *backend
+    command: ["python", "-m", "company_check.worker.main"]
+    restart: unless-stopped
+    stop_grace_period: 15s  # lets a running agent save its progress on shutdown
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      temporal:
+        condition: service_started
+
+  frontend:
+    build:
+      context: frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    profiles: ["app"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
   pgdata:
