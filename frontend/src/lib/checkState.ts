@@ -32,7 +32,13 @@ export type Tool = {
   summary?: string;
 };
 
-export type Message = { id: string; text: string; done: boolean; kind: "agent" | "report" };
+export type Message = {
+  id: string;
+  text: string;
+  done: boolean;
+  kind: "agent" | "report";
+  previous?: string | null; // report text before this revision
+};
 
 export type Concern = {
   id: string;
@@ -46,6 +52,15 @@ export type Findings = {
   concerns: Concern[];
   open_questions: string[];
   recommendation: { decision: string; reason: string };
+  changes?: string[]; // set when a feedback round patched the findings
+};
+
+export type Feedback = {
+  id: string;
+  text: string;
+  target: { kind: string; id?: string | null } | null;
+  queued: boolean;
+  result?: { outcome: "applied" | "duplicate"; changes: string[]; message?: string };
 };
 
 export type RatingTrendSpec = {
@@ -85,6 +100,8 @@ export type Item =
   | { kind: "findings"; seq: number; findings: Findings }
   | { kind: "chart"; seq: number; chart: Chart }
   | { kind: "company"; seq: number; name: string }
+  | { kind: "feedback"; id: string }
+  | { kind: "excluded"; seq: number; ids: string[]; reason: string }
   | { kind: "marker"; seq: number; text: string; tone: "info" | "warn" | "error" };
 
 export type CheckView = {
@@ -96,6 +113,9 @@ export type CheckView = {
   messages: Record<string, Message>;
   questions: Record<string, Question>;
   latestChart: Record<string, number>; // chart_id -> latest version seen
+  feedback: Record<string, Feedback>;
+  latestFindings: number; // seq of the newest findings
+  latestReport: string | null; // message id of the newest report
 };
 
 export const initialView: CheckView = {
@@ -106,6 +126,9 @@ export const initialView: CheckView = {
   messages: {},
   questions: {},
   latestChart: {},
+  feedback: {},
+  latestFindings: 0,
+  latestReport: null,
 };
 
 const STATUS_MARKERS: Record<string, { text: string; tone: "info" | "warn" | "error" }> = {
@@ -144,6 +167,7 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
         [p.message_id]: { id: p.message_id, text: "", done: false, kind: prev?.kind ?? kindOf(p.message_id) },
       };
       if (!prev) v.items = [...v.items, { kind: "message", id: p.message_id }];
+      if (kindOf(p.message_id) === "report") v.latestReport = p.message_id;
       break;
     }
     case "message_delta": {
@@ -154,6 +178,7 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
         kind: kindOf(p.message_id),
       };
       if (!view.messages[p.message_id]) v.items = [...v.items, { kind: "message", id: p.message_id }];
+      if (m.kind === "report") v.latestReport = p.message_id;
       v.messages = { ...view.messages, [p.message_id]: { ...m, text: m.text + p.text } };
       break;
     }
@@ -168,8 +193,9 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       if (!m) v.items = [...v.items, { kind: "message", id: p.message_id }];
       v.messages = {
         ...view.messages,
-        [p.message_id]: { id: p.message_id, text: p.markdown, done: true, kind: "report" },
+        [p.message_id]: { id: p.message_id, text: p.markdown, done: true, kind: "report", previous: p.previous },
       };
+      v.latestReport = p.message_id;
       break;
     }
     case "question": {
@@ -193,6 +219,21 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
     }
     case "findings":
       v.items = [...v.items, { kind: "findings", seq: e.seq, findings: p as Findings }];
+      v.latestFindings = e.seq;
+      break;
+    case "feedback":
+      if (!view.feedback[p.id]) {
+        v.feedback = { ...view.feedback, [p.id]: p as Feedback };
+        v.items = [...v.items, { kind: "feedback", id: p.id }];
+      }
+      break;
+    case "feedback_result": {
+      const f = view.feedback[p.feedback_id];
+      if (f) v.feedback = { ...view.feedback, [p.feedback_id]: { ...f, result: p as Feedback["result"] } };
+      break;
+    }
+    case "evidence_excluded":
+      v.items = [...v.items, { kind: "excluded", seq: e.seq, ids: p.ids, reason: p.reason }];
       break;
     case "company_selected":
       v.items = [...v.items, { kind: "company", seq: e.seq, name: p.name }];

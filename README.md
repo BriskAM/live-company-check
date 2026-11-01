@@ -40,6 +40,8 @@ With the API and worker running:
 cd backend
 uv run python scripts/pause_mid_report.py "Copperleaf Software"   # pause mid-report, resume, check the seam
 uv run python scripts/verify_stream.py <check_id>                 # visible text == final report?
+uv run python scripts/feedback.py <check_id> "Only show the last 12 months" --target chart:chart-1
+uv run python scripts/feedback.py <check_id> "<same text>" --times 2     # repeat → no-op
 uv run python -m company_check.cli "Brightline Logistics"         # run the agent in the terminal
 ```
 

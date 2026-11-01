@@ -9,19 +9,19 @@
 | M2 | Temporal workflow, event log, SSE, live UI | ✅ done |
 | M3 | Questions (single / multi / text), idempotent answers | ✅ done (with M2) |
 | M4 | Pause mid-writing, restart survival, long pauses | ✅ done |
-| M5 | Visualization tools (4), inline charts/tables, update-by-id | ✅ done (chart *feedback* arrives with M6's message path) |
-| M6 | Feedback rounds with selective recompute | ⏳ |
+| M5 | Visualization tools (4), inline charts/tables, update-by-id | ✅ done |
+| M6 | Feedback rounds: queue, patch tools, selective recompute, repeat dedupe, continue-as-new | ✅ done |
 | M7 | Failure polish, README, architecture diagram, demo | ⏳ |
 
 ## Sample checks status
 
 | Check | Status |
 |---|---|
-| 1 Brightline | Single-choice lookalike question ✅. Monthly chart (M5), switch to Inc (M6) pending |
-| 2 Northwind | Agent already excludes the clinic articles on its own ✅. Feedback flow (M6) pending |
-| 3 Pinecrest | Rating drop found ✅. Agent charts it unprompted with the sale marked, plus a before/after table ✅. Chart feedback (M6) pending |
+| 1 Brightline | Single-choice lookalike question ✅. "I meant the Inc one" restarts the check for cmp_002 ✅ |
+| 2 Northwind | Agent already ignores the clinic articles ✅. Exclusion feedback applied, report left alone (nothing it reads changed) ✅. Timeline on request ✅. Same feedback twice → both no-ops, no LLM call for the repeat ✅ |
+| 3 Pinecrest | Rating drop charted unprompted with the sale marked, plus a before/after table ✅. "Last 12 months", remove marker, "mark the sale date" each update chart-1 in place, range kept ✅. Table split into three periods from the UI ✅ |
 | 4 Copperleaf | Leafline data exposure found ✅. Pause mid-report + resume continues the text ✅. Worker/API restart ✅. Long pause across Temporal restart ✅ |
-| 5 Harborview | Multi-choice → free-text → focused findings ✅. Feedback rounds (M6) pending |
+| 5 Harborview | Multi-choice → free-text → focused findings ✅. Long session tested on Pinecrest: 13 report rounds, 10 sent in one burst (queued, handled in order), continued-as-new after 8 rounds ✅ |
 
 ## Bugs found and fixed
 
@@ -48,6 +48,16 @@
 9. **Agent's before/after table counted every review as "after".** It left the second
    period unbounded. Periods are now validated (bounded, non-overlapping, month-only dates
    normalised) and a bad call goes back to the model, which then fixed it.
+10. **Excluding an uncited article rewrote the report anyway.** The report only reads the
+    reviews and the cited evidence, so now only excluding a review or changing a concern
+    marks it for a rewrite.
+11. **A later report rewrite undid an earlier request** ("put the recommendation in bold"
+    was lost three rounds later). Wording requests are now kept as standing instructions for
+    every rewrite; later ones win on conflict.
+12. **Repeat of an exclusion after other feedback went to the LLM** (harmless, but a wasted
+    call). A repeat is now also a no-op when the earlier identical feedback only excluded
+    evidence and all of it is still excluded.
+13. **A chart "update" that changed nothing created a new version.** Now skipped.
 
 ## Verified scenarios (live, Gemini)
 
@@ -58,6 +68,8 @@
 | Pause while waiting for an answer, restart Temporal + worker + API, answer while paused, resume | Question and pause survived; answer applied; completed |
 | Check failed with 402, then Retry after fixing the key | Resumed from checkpoint and completed |
 | 8 h pause | Workflow test on the time-skipping server |
+| Feedback rounds (Northwind, Pinecrest, Brightline) | See sample checks table; driven with `scripts/feedback.py` and from the UI |
+| 10 feedback messages in one burst | Queued, handled one by one, workflow continued as new after 8 rounds; dedupe of old command ids survives it (workflow test) |
 
 ## Observations / open issues
 
@@ -71,6 +83,11 @@
 - Analyst messages (1–3 sentences before tool calls) are restarted, not continued, after an
   interruption — continuing a half-written tool-calling turn is not reliable. Only the
   report, which is the long text, is continued.
+- Feedback sent while the agent is busy shows the agent's reply to an earlier feedback
+  below it (events are shown in the order they happened). Clear enough with the
+  "Queued" / "Applied" note under each message, but a threaded view would read better.
+- Report numbers can differ slightly between sections (e.g. 2.5 vs 2.63 after the sale):
+  the change-point statistic and the period table split at slightly different dates.
 - On resume after a question, the graph re-emits the step's events; idempotency keys drop
   them in the DB, the console runner still prints them (expected).
 - The worker and API run on the host during development; Compose only runs Postgres and

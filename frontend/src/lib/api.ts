@@ -9,6 +9,8 @@ export type Check = {
   updated_at: string;
 };
 
+export type FeedbackTarget = { kind: "concern" | "evidence" | "chart" | "report"; id?: string | null };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -35,6 +37,11 @@ export const api = {
     request(`/checks/${id}/answers`, {
       method: "POST",
       body: JSON.stringify({ command_id: commandId, question_id: questionId, value }),
+    }),
+  feedback: (id: string, commandId: string, text: string, target: FeedbackTarget | null) =>
+    request(`/checks/${id}/feedback`, {
+      method: "POST",
+      body: JSON.stringify({ command_id: commandId, text, target }),
     }),
   control: (id: string, action: "pause" | "resume" | "retry", commandId: string) =>
     request(`/checks/${id}/${action}`, {

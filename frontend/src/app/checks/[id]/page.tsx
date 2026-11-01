@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { use, useEffect, useRef, useState } from "react";
+import { FeedbackBox } from "@/components/FeedbackBox";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Timeline } from "@/components/Timeline";
-import { api, Check, newCommandId } from "@/lib/api";
+import { api, Check, FeedbackTarget, newCommandId } from "@/lib/api";
 import { useCheckEvents } from "@/lib/useCheckEvents";
 
 type Control = "pause" | "resume" | "retry";
@@ -16,6 +17,7 @@ export default function CheckPage({ params }: { params: Promise<{ id: string }> 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pending, setPending] = useState<Control | null>(null);
   const [controlError, setControlError] = useState<string | null>(null);
+  const [target, setTarget] = useState<FeedbackTarget | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
@@ -64,7 +66,7 @@ export default function CheckPage({ params }: { params: Promise<{ id: string }> 
   const canPause = status === "running" || status === "waiting_for_input";
 
   return (
-    <main className="mx-auto max-w-3xl px-4 pb-24">
+    <main className="mx-auto max-w-3xl px-4 pb-40">
       <header className="sticky top-0 z-10 -mx-4 mb-6 border-b border-zinc-200 bg-[#f7f7f8]/95 px-4 py-4 backdrop-blur">
         <div className="flex items-center gap-3">
           <Link href="/" className="text-sm text-zinc-400 hover:text-zinc-700">
@@ -110,9 +112,12 @@ export default function CheckPage({ params }: { params: Promise<{ id: string }> 
       {view.items.length === 0 ? (
         <p className="text-sm text-zinc-400">Starting the agent…</p>
       ) : (
-        <Timeline view={view} checkId={id} />
+        <Timeline view={view} checkId={id} onTarget={setTarget} />
       )}
       <div ref={bottom} />
+      {view.items.length > 0 && (
+        <FeedbackBox checkId={id} status={status} target={target} onClearTarget={() => setTarget(null)} />
+      )}
     </main>
   );
 }

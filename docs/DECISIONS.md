@@ -154,8 +154,53 @@ the tooltip and the data table, not on a second y-axis); 2px line, ≥8px dots w
 ring; hairline solid grid; event markers as neutral annotation lines; every chart has a
 "Show data" table view.
 
+## Feedback rounds
+
+### The workflow stays open and queues feedback
+After the check completes, the workflow waits for feedback. Feedback can be sent at any
+time; while the agent is busy (or paused) it is queued and handled in order. Each round is
+one run of the agent with the feedback as input; questions, pause and retry work inside a
+round exactly as in the first run. A completed check with no feedback for 30 days closes.
+
+### A round patches state; it doesn't redo the check
+A feedback round gets a fresh, compact context (dossier + current findings, charts, earlier
+answers and a short feedback log), not the whole transcript, and a different tool set:
+`exclude_evidence`, `update_findings` (patch named concerns only), chart tools with
+`chart_id`, `revise_report`, `search_news`, `switch_company`. It ends when the analyst replies
+without calling a tool.
+
+What gets recomputed is decided in code, not by the model:
+- Excluding evidence removes concerns that relied only on it, takes it off others, and
+  redraws only charts whose data changed (compared by a digest of the chart's data).
+- The report is rewritten only when something it reads changed (a concern, the
+  recommendation, an excluded review) or the reviewer asked for wording changes — and it is
+  revised from the version the reviewer read, keeping untouched parts.
+- Wording requests are kept and passed to every later rewrite, so round 7 doesn't undo
+  round 3.
+- "I meant the other company" restarts the check for that company (state reset; chart ids
+  keep counting up so old charts on screen stay distinct).
+
+**Trade-off:** the model still decides *which* operations a piece of feedback needs; a
+misread is visible in the round's "Applied: …" summary and can be corrected with more
+feedback.
+
+### Repeated feedback is a no-op without an LLM call
+Two layers: the same `command_id` is dropped by the API and workflow (double click, retry).
+A *new* message with the same text (normalised) is skipped deterministically when it cannot
+change anything: it matches the last applied feedback, or an earlier one that only excluded
+evidence that is still excluded (exclusions are never undone). Other repeats ("make it
+shorter" again) go to the model on purpose.
+
+### Continue-as-new every 8 rounds
+Keeps Temporal history small for long review sessions. The new run carries the queue and the
+last 500 command ids (so late repeats are still recognised); the agent's own state is in the
+LangGraph checkpoint and isn't affected.
+
 ## Testing
 - Unit tests for search, stats and company picking (seeded DB).
 - Workflow tests on Temporal's time-skipping server with fake activities: answers and
-  double clicks, pause/resume, answers while paused, failure then retry.
+  double clicks, pause/resume, answers while paused, failure then retry, feedback queued
+  while running, questions inside a feedback round, continue-as-new.
+- Feedback tools without the LLM: exclusion touches only dependent concerns and charts,
+  repeats are no-ops, patches leave other concerns alone, a feedback round starts once.
 - The agent is exercised against the real LLM through a CLI runner; tests never call the LLM.

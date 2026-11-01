@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { FeedbackTarget } from "@/lib/api";
 import type { Chart, ChartSpec, RatingTrendSpec, NewsTimelineSpec, TableSpec } from "@/lib/checkState";
 
 // Chart tokens (light surface). One series → no legend; the title names it.
@@ -186,7 +187,15 @@ function Body({ spec }: { spec: ChartSpec }) {
 }
 
 /** One version of a chart. Older versions collapse to a one-line note pointing to the newer one. */
-export function ChartBlock({ chart, superseded }: { chart: Chart; superseded: boolean }) {
+export function ChartBlock({
+  chart,
+  superseded,
+  onTarget,
+}: {
+  chart: Chart;
+  superseded: boolean;
+  onTarget?: (t: FeedbackTarget) => void;
+}) {
   const [open, setOpen] = useState(false);
   const header = (
     <div className="flex items-center gap-2">
@@ -197,6 +206,14 @@ export function ChartBlock({ chart, superseded }: { chart: Chart; superseded: bo
         </span>
       )}
       <code className="ml-auto text-[11px] text-zinc-400">{chart.chart_id}</code>
+      {onTarget && (
+        <button
+          onClick={() => onTarget({ kind: "chart", id: chart.chart_id })}
+          className="text-[11px] text-zinc-400 hover:text-blue-700"
+        >
+          Feedback
+        </button>
+      )}
     </div>
   );
 
