@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -23,6 +23,17 @@ class AnswerIn(BaseModel):
     command_id: str = Field(description="Client-generated UUID; repeats are ignored")
     question_id: str
     value: Any
+
+
+class FeedbackTarget(BaseModel):
+    kind: Literal["concern", "evidence", "chart", "report"]
+    id: str | None = None
+
+
+class FeedbackIn(BaseModel):
+    command_id: str = Field(description="Client-generated UUID; repeats are ignored")
+    text: str = Field(min_length=1, max_length=2000)
+    target: FeedbackTarget | None = None
 
 
 class ControlIn(BaseModel):

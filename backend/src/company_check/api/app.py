@@ -2,7 +2,7 @@
 
     uv run uvicorn company_check.api.app:app --reload
 
-Commands (answer, pause, resume, retry) are recorded in `commands` and forwarded to the
+Commands (answer, feedback, pause, resume, retry) are recorded in `commands` and forwarded to the
 check's workflow as signals. Both layers dedupe on the client's command_id, so a double
 click or a retried request is harmless.
 """
@@ -29,6 +29,7 @@ from company_check.api.schemas import (
     CommandAccepted,
     ControlIn,
     CreateCheck,
+    FeedbackIn,
 )
 from company_check.config import get_settings
 from company_check.db import get_session
@@ -36,7 +37,7 @@ from company_check.event_store import channel, read_events
 from company_check.models import Check, Command
 from company_check.pg import close_pool, get_pool
 from company_check.temporal_client import get_temporal_client
-from company_check.worker.types import AnswerSignal, CheckInput, ControlSignal
+from company_check.worker.types import AnswerSignal, CheckInput, ControlSignal, FeedbackSignal
 from company_check.worker.workflows import CheckWorkflow
 
 SSE_PING_S = 15
@@ -156,6 +157,22 @@ async def answer(
         check_id,
         CheckWorkflow.answer,
         AnswerSignal(body.command_id, body.question_id, body.value),
+    )
+    return CommandAccepted(command_id=body.command_id, duplicate=not first)
+
+
+@app.post("/checks/{check_id}/feedback", response_model=CommandAccepted)
+async def feedback(
+    check_id: str, body: FeedbackIn, session: AsyncSession = Depends(get_session)
+) -> CommandAccepted:
+    """Feedback can be sent at any time; the workflow queues it until the agent is free."""
+    await _get_check(session, check_id)
+    payload = body.model_dump(exclude={"command_id"})
+    first = await _record_command(session, check_id, body.command_id, "feedback", payload)
+    await _signal(
+        check_id,
+        CheckWorkflow.feedback,
+        FeedbackSignal(body.command_id, body.text.strip(), payload["target"]),
     )
     return CommandAccepted(command_id=body.command_id, duplicate=not first)
 

@@ -3,13 +3,19 @@
 The workflow never touches the DB or the LLM (that would break deterministic replay).
 It only decides *when* to run the agent activity and holds the reviewer's commands:
 
-    ┌──────────────── loop ────────────────┐
-    │ wait until not paused                │
-    │ run_agent(answers so far)            │──▶ "waiting": wait for all answers
-    │   cancelled by pause → paused        │──▶ "done": completed
-    │   failed after retries → error,      │
-    │   wait for retry signal              │
-    └──────────────────────────────────────┘
+    run the check ──▶ completed ──▶ wait for feedback ──▶ run a feedback round ──┐
+                          ▲                                                     │
+                          └─────────────────────────────────────────────────────┘
+
+    one run = loop:
+      wait until not paused
+      run_agent(answers so far, feedback)  ──▶ "waiting": wait for all answers
+        cancelled by pause → paused        ──▶ "done": back to completed
+        failed after retries → error, wait for retry signal
+
+Feedback that arrives while the agent is busy is queued and handled in order afterwards.
+After a number of rounds the workflow continues as new, carrying only what it needs, so a
+long review session keeps a small history.
 
 State lives in Temporal's event history, so a paused or waiting check survives restarts of
 the API, the worker and (with persistence) the Temporal server.
@@ -30,6 +36,7 @@ with workflow.unsafe.imports_passed_through():
         CheckInput,
         ControlSignal,
         EmitInput,
+        FeedbackSignal,
         RunAgentInput,
     )
 
@@ -41,6 +48,13 @@ AGENT_RETRY = RetryPolicy(
 )
 EMIT_RETRY = RetryPolicy(maximum_interval=timedelta(seconds=10))
 
+# Feedback rounds per workflow run before continuing as new (keeps the history small).
+ROUNDS_PER_RUN = 8
+# Command ids remembered across continue-as-new, for deduping late repeats.
+SEEN_COMMANDS_KEPT = 500
+# A completed check with no feedback for this long closes; feedback after that gets a 409.
+IDLE_CLOSE_AFTER = timedelta(days=30)
+
 
 @workflow.defn
 class CheckWorkflow:
@@ -51,7 +65,9 @@ class CheckWorkflow:
         self.questions: list[dict[str, Any]] = []  # currently pending
         self.answers: dict[str, Any] = {}  # question_id -> value (first answer wins)
         self.retry_requested = False
-        self._seen_commands: set[str] = set()
+        self.feedback_queue: list[dict[str, Any]] = []
+        self.rounds = 0  # feedback rounds handled in this run
+        self._seen_commands: dict[str, None] = {}  # insertion-ordered set
         self._agent_task: asyncio.Task | None = None
         # Set when a pause cancels the running agent, so the loop treats that cancellation as
         # a pause even if a resume arrives before the activity has finished stopping.
@@ -74,7 +90,7 @@ class CheckWorkflow:
     def _first_time(self, command_id: str) -> bool:
         if command_id in self._seen_commands:
             return False
-        self._seen_commands.add(command_id)
+        self._seen_commands[command_id] = None
         return True
 
     def _all_answered(self) -> bool:
@@ -94,6 +110,18 @@ class CheckWorkflow:
             "answer",
             {"question_id": sig.question_id, "value": sig.value},
             key=f"answer:{sig.question_id}",
+        )
+
+    @workflow.signal
+    async def feedback(self, sig: FeedbackSignal) -> None:
+        if not self._first_time(sig.command_id):
+            return
+        item = {"id": sig.command_id, "text": sig.text, "target": sig.target}
+        self.feedback_queue.append(item)
+        await self._emit(
+            "feedback",
+            {**item, "queued": self.status != "completed" or len(self.feedback_queue) > 1},
+            key=f"feedback:{sig.command_id}",
         )
 
     @workflow.signal
@@ -130,6 +158,7 @@ class CheckWorkflow:
             "paused": self.paused,
             "questions": self.questions,
             "answers": self.answers,
+            "feedback_queue": self.feedback_queue,
         }
 
     # --- main loop -------------------------------------------------------------
@@ -137,6 +166,39 @@ class CheckWorkflow:
     @workflow.run
     async def run(self, inp: CheckInput) -> None:
         self.check_id = inp.check_id
+        if inp.carry:
+            self.feedback_queue = inp.carry["feedback_queue"]
+            self._seen_commands = dict.fromkeys(inp.carry["seen_commands"])
+            self.status = "completed"  # already announced by the previous run
+        else:
+            await self._run_agent(inp.query, None)
+
+        while True:
+            if self.rounds >= ROUNDS_PER_RUN or workflow.info().is_continue_as_new_suggested():
+                await workflow.wait_condition(workflow.all_handlers_finished)
+                workflow.continue_as_new(
+                    CheckInput(
+                        inp.check_id,
+                        inp.query,
+                        carry={
+                            "feedback_queue": self.feedback_queue,
+                            "seen_commands": list(self._seen_commands)[-SEEN_COMMANDS_KEPT:],
+                        },
+                    )
+                )
+            try:
+                await workflow.wait_condition(
+                    lambda: bool(self.feedback_queue), timeout=IDLE_CLOSE_AFTER
+                )
+            except TimeoutError:
+                return
+            await self._run_agent(inp.query, self.feedback_queue[0])
+            self.feedback_queue.pop(0)
+            self.rounds += 1
+
+    async def _run_agent(self, query: str, feedback: dict[str, Any] | None) -> None:
+        """Run the agent until it has finished the check (or the feedback round)."""
+        self.answers = {}
         while True:
             await workflow.wait_condition(lambda: not self.paused)
             await self._set_status("running")
@@ -144,7 +206,7 @@ class CheckWorkflow:
                 continue
             self._agent_task = workflow.start_activity(
                 run_agent,
-                RunAgentInput(inp.check_id, inp.query, dict(self.answers)),
+                RunAgentInput(self.check_id, query, dict(self.answers), feedback),
                 start_to_close_timeout=timedelta(minutes=10),
                 heartbeat_timeout=timedelta(seconds=10),
                 retry_policy=AGENT_RETRY,
@@ -177,6 +239,7 @@ class CheckWorkflow:
                 continue
 
             self.questions = []
+            # Finished just as a pause arrived: nothing is left to pause.
+            self.paused = False
             await self._set_status("completed")
-            # M6: wait for feedback here and run another round.
             return

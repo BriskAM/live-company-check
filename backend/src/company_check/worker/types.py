@@ -8,6 +8,8 @@ from typing import Any
 class CheckInput:
     check_id: str
     query: str
+    # Set when the workflow continues as new: what the previous run carried over.
+    carry: dict[str, Any] | None = None
 
 
 @dataclass
@@ -17,6 +19,9 @@ class RunAgentInput:
     # All answers accepted so far, by question_id. The activity applies the ones matching
     # the graph's pending interrupts, so re-sending them is harmless.
     answers: dict[str, Any] = field(default_factory=dict)
+    # The feedback this run should handle ({"id", "text", "target"}), or None for the
+    # initial check. The activity starts a feedback round only once per feedback id.
+    feedback: dict[str, Any] | None = None
 
 
 @dataclass
@@ -47,3 +52,11 @@ class AnswerSignal:
 @dataclass
 class ControlSignal:
     command_id: str
+
+
+@dataclass
+class FeedbackSignal:
+    command_id: str
+    text: str
+    # What the feedback is about, e.g. {"kind": "chart", "id": "chart-1"}; None = general.
+    target: dict[str, Any] | None = None

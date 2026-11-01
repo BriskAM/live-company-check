@@ -43,10 +43,14 @@ async def _heartbeat() -> None:
         await asyncio.sleep(HEARTBEAT_EVERY_S)
 
 
+DONE = object()  # _graph_input: nothing left to run
+
+
 def _graph_input(snapshot, inp: RunAgentInput) -> tuple[Any, list[dict[str, Any]]]:
     """Decide how to (re)enter the graph from its last checkpoint.
 
-    Returns (input, unanswered_questions). Input None means "continue where it stopped".
+    Returns (input, unanswered_questions). Input None means "continue where it stopped";
+    DONE means the check (or this feedback round) has already finished.
     """
     if snapshot.created_at is None:  # never ran
         return {"query": inp.query}, []
@@ -57,7 +61,14 @@ def _graph_input(snapshot, inp: RunAgentInput) -> tuple[Any, list[dict[str, Any]
         return Command(
             resume={i.id: inp.answers[i.value["question_id"]] for i in snapshot.interrupts}
         ), []
-    return None, []
+    if snapshot.next:
+        return None, []
+    # The graph is at rest. Start the feedback round unless it already ran (a retry after
+    # the round finished must not run it twice).
+    fb = inp.feedback
+    if fb and (snapshot.values.get("feedback") or {}).get("id") != fb["id"]:
+        return {"feedback": fb}, []
+    return DONE, []
 
 
 @activity.defn
@@ -78,7 +89,7 @@ async def run_agent(inp: RunAgentInput) -> RunAgentResult:
         payload, unanswered = _graph_input(snapshot, inp)
         if unanswered:
             return RunAgentResult(status="waiting", questions=unanswered)
-        if snapshot.created_at is not None and not snapshot.next and not snapshot.interrupts:
+        if payload is DONE:
             return RunAgentResult(status="done")
 
         result = await graph.ainvoke(payload, config, context=AgentContext(sink=sink))
