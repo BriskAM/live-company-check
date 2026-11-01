@@ -40,11 +40,11 @@
 5. **Pausing a finished check returned 500.** Signals to a completed workflow now return 409.
 6. **Harborview never asked the free-text follow-up.** The prompt made it optional; made it a
    firm step after the reviewer picks sources in a conflict.
+7. **Ruff picked up a global config** (B008 flags FastAPI's `Depends`). Project now pins its
+   own lint rules.
 8. **Billing errors were retried 4 times.** A 402 "prepayment credits are depleted" can't fix
    itself. Permanent LLM errors (401/402/403, invalid key) now fail fast as non-retryable;
    the check shows the error and waits for Retry. 429/503/timeouts still retry.
-7. **Ruff picked up a global config** (B008 flags FastAPI's `Depends`). Project now pins its
-   own lint rules.
 
 ## Observations / open issues
 
