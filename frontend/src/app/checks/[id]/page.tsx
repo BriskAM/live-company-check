@@ -8,11 +8,25 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Timeline } from "@/components/Timeline";
 import { api, Check, FeedbackTarget, newCommandId } from "@/lib/api";
-import { progress, Step } from "@/lib/checkState";
+import { CheckView, progress, Step } from "@/lib/checkState";
 import { useCheckEvents } from "@/lib/useCheckEvents";
 
 type Control = "pause" | "resume" | "retry";
 type Tab = "activity" | "case";
+
+const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+
+function Usage({ usage }: { usage: CheckView["usage"] }) {
+  if (!usage.calls) return null;
+  return (
+    <span
+      className="hidden font-mono text-[11px] text-muted md:inline"
+      title={`${usage.calls} LLM calls · ${usage.input.toLocaleString()} tokens in, ${usage.output.toLocaleString()} out · ${usage.models.join(", ")}`}
+    >
+      {fmt(usage.input + usage.output)} tokens · {usage.calls} calls
+    </span>
+  );
+}
 
 function Progress({ steps, working }: { steps: Step[]; working: boolean }) {
   return (
@@ -144,6 +158,7 @@ export default function CheckPage({ params }: { params: Promise<{ id: string }> 
             <Progress steps={progress(view)} working={status === "running"} />
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <Usage usage={view.usage} />
             {canPause && (
               <button
                 onClick={() => control("pause")}

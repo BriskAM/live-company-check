@@ -3,6 +3,7 @@
 import json
 from typing import Any
 
+from company_check.agent import viz
 from company_check.agent.stats import monthly_ratings, review_summary
 
 ANALYST_SYSTEM = """\
@@ -59,7 +60,10 @@ Bullets. Write "None." if there are none.
 One of: Proceed / Proceed with caution / Do not proceed / Needs more information — followed \
 by one or two sentences of reasoning.
 
-Use only the findings and evidence given; cite only IDs that appear there. At most 450 words.
+Use only the findings and evidence given; cite only IDs that appear there. Every average you \
+quote must name the period it covers (e.g. "4.59 from Nov 2024 to 22 Jan 2026"). If tables \
+were shown to the reviewer, use their figures for the same periods so the numbers match. At \
+most 450 words.
 """
 
 
@@ -162,6 +166,21 @@ Excluded evidence (do not use): {sorted(excluded) or "none"}
 """
 
 
+def _shown_tables(state: dict[str, Any]) -> str:
+    """Rating-period tables the reviewer has seen, recomputed from the current state, so the
+    report quotes the same numbers."""
+    rows = []
+    for chart in state.get("charts", {}).values():
+        if chart["tool"] == "table_rating_periods" and chart["params"].get("periods"):
+            try:
+                rows += viz.rating_periods(state, chart["params"])["rows"]
+            except viz.PeriodError:
+                continue
+    if not rows:
+        return ""
+    return f"Rating periods shown to the reviewer: {json.dumps(rows)}\n"
+
+
 def report_input(state: dict[str, Any]) -> str:
     excluded = set(state.get("excluded_ids", []))
     evidence = {
@@ -179,6 +198,7 @@ Monthly average rating: {json.dumps(monthly_ratings(reviews))}
 Reviews ({len(reviews)}):
 {_lines(reviews, lambda r: f"{r['id']} | {r['date']} | {r['rating']}/5 | {r['text']}")}
 
+{_shown_tables(state)}
 Findings:
 concerns = {json.dumps(state.get("concerns", []), indent=1)}
 open_questions = {json.dumps(state.get("open_questions", []))}

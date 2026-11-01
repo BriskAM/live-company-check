@@ -131,6 +131,8 @@ export type CheckView = {
   company: Company | null;
   findings: Findings | null;
   charts: Record<string, Chart>; // latest version of each chart, in creation order
+  completedOnce: boolean; // later runs are feedback rounds
+  usage: { calls: number; input: number; output: number; models: string[] };
 };
 
 export const initialView: CheckView = {
@@ -147,6 +149,8 @@ export const initialView: CheckView = {
   company: null,
   findings: null,
   charts: {},
+  completedOnce: false,
+  usage: { calls: 0, input: 0, output: 0, models: [] },
 };
 
 const STATUS_MARKERS: Record<string, { text: string; tone: "info" | "warn" | "error" }> = {
@@ -166,7 +170,11 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       v.status = p.status;
       v.error = p.status === "error" ? p.message : undefined;
       v.errorDetail = p.status === "error" ? p.detail : undefined;
-      const marker = STATUS_MARKERS[p.status];
+      // After the first completion, each feedback round ends with its own "Applied: …" note,
+      // so another "Check complete" line would only repeat it.
+      const repeat = p.status === "completed" && view.completedOnce;
+      const marker = repeat ? undefined : STATUS_MARKERS[p.status];
+      if (p.status === "completed") v.completedOnce = true;
       if (marker) v.items = [...v.items, { kind: "marker", seq: e.seq, ...marker }];
       else if (wasPaused && p.status !== "paused")
         v.items = [...v.items, { kind: "marker", seq: e.seq, text: "Resumed", tone: "info" }];
@@ -253,6 +261,14 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       if (f) v.feedback = { ...view.feedback, [p.feedback_id]: { ...f, result: p as Feedback["result"] } };
       break;
     }
+    case "usage":
+      v.usage = {
+        calls: view.usage.calls + 1,
+        input: view.usage.input + (p.input_tokens ?? 0),
+        output: view.usage.output + (p.output_tokens ?? 0),
+        models: p.model && !view.usage.models.includes(p.model) ? [...view.usage.models, p.model] : view.usage.models,
+      };
+      break;
     case "notice":
       v.items = [...v.items, { kind: "marker", seq: e.seq, text: p.text, tone: "warn" }];
       break;
@@ -291,8 +307,11 @@ export function progress(view: CheckView): Step[] {
   ];
   const labels = ["Find company", "Gather data", "Analyse", "Write report"];
   const firstOpen = done.indexOf(false);
-  return labels.map((label, i) => ({
+  const steps: Step[] = labels.map((label, i) => ({
     label,
     state: done[i] ? "done" : i === firstOpen ? "active" : "todo",
   }));
+  if (view.completedOnce && view.status !== "completed" && firstOpen === -1)
+    steps.push({ label: "Feedback round", state: "active" });
+  return steps;
 }

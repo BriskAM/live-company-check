@@ -71,7 +71,7 @@ Health check: `curl localhost:8000/health` returns `{"database":"ok","temporal":
 
 ```bash
 cd backend && uv run pytest     # needs Postgres running and seeded; never calls the LLM
-cd frontend && npx tsc --noEmit && npm run lint
+cd frontend && npm test && npx tsc --noEmit && npm run lint   # reducer tests: replay, reconnect, restarts
 ```
 
 Workflow tests run on Temporal's time-skipping test server with fake activities (questions,
@@ -90,7 +90,35 @@ uv run python scripts/verify_stream.py <check_id>                 # visible text
 uv run python scripts/feedback.py <check_id> "Only show the last 12 months" --target chart:chart-1
 uv run python scripts/feedback.py <check_id> "<same text>" --times 2     # repeat → no-op
 uv run python -m company_check.cli "Brightline Logistics"         # run the agent in the terminal
+uv run python scripts/run_samples.py [check_3] [--quick]          # all five sample checks, PASS/FAIL per step
+uv run python scripts/reset_demo.py --yes                          # clear every check before a demo
 ```
+
+`run_samples.py` reads the sample checks from `data/dummy_data.json` itself; they never reach
+the database or the agent. It uses the real LLM and takes several minutes on the free tier.
+
+## Extending it
+
+**A new data tool** (for example court records):
+1. A Pydantic args schema in `agent/state.py`; its docstring is what the model reads.
+2. An async handler `(turn, args, call_id)` in `agent/toolbox.py`. Read data through
+   `agent/data.py`, add new evidence with `turn.add(...)`, and raise `ToolError` for bad input
+   so the model sees the error and can try again.
+3. Register it in `HANDLERS` and `SCHEMAS`, and add it to `CHECK_TOOL_NAMES` and/or
+   `FEEDBACK_TOOL_NAMES`. Add a label for the activity stream in `frontend/src/components/Timeline.tsx`.
+
+**A new chart:** a schema, a `CHARTS` entry (name, schema, default title), a branch in
+`build_spec` that returns a spec with a `type`, the pure data function in `agent/viz.py` (so
+`rebuild_charts` can recompute it after exclusions), and a renderer for that `type` in
+`frontend/src/components/ChartBlock.tsx`. Versioning, feedback targeting and replay work
+without changes.
+
+**A new event type:** emit it with `sink.emit(type, payload, key=...)` (the key makes retries
+idempotent) and handle it in `reduce()` in `frontend/src/lib/checkState.ts`, with a test in
+`checkState.test.ts`. Nothing in between needs to know about it.
+
+**Another LLM provider:** `agent/llm.py` is the only place a model is built. Return any
+LangChain chat model that supports tool calling and streaming from `_base_model`.
 
 ## Repository layout
 

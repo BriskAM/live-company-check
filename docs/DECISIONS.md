@@ -139,6 +139,17 @@ an explanation.
 After 8 analyst turns the model is offered only `submit_findings` (forced tool choice) or, in
 a feedback round, no tools. Failing outright would be retried into the same wall.
 
+### Requests are spaced client-side
+Each model gets a sliding-window limiter (`LLM_RPM`, default 14, under Flash-Lite's free
+15 RPM; `LLM_FALLBACK_RPM` 4 for Flash). A burst of feedback rounds then queues calls for a
+few seconds instead of collecting 429s, retries and fallbacks. The limit is per worker
+process; several workers would need a shared limiter (Redis) or a paid tier.
+
+### Token usage is an event
+After each LLM call the graph emits a `usage` event (model, tokens in/out). The header sums
+them, so the cost of a check and of each feedback round is visible without a separate
+metrics system, and it survives replay like everything else.
+
 ### Validation instead of trust
 `submit_findings` rejects unknown or excluded evidence ids, and malformed tool calls are
 returned to the model with the error so it can fix them. A turn limit stops loops.
@@ -245,4 +256,9 @@ Temporal Cloud.
   while running, questions inside a feedback round, continue-as-new.
 - Feedback tools without the LLM: exclusion touches only dependent concerns and charts,
   repeats are no-ops, patches leave other concerns alone, a feedback round starts once.
-- The agent is exercised against the real LLM through a CLI runner; tests never call the LLM.
+- Frontend reducer tests (vitest): a reconnect that replays seen events, a full replay, a
+  restarted message, chart versions, feedback results, progress and usage all give the
+  same view.
+- The agent is exercised against the real LLM through a CLI runner and
+  `scripts/run_samples.py`, which drives the five sample checks through the API and checks
+  each expected outcome; unit tests never call the LLM.

@@ -17,6 +17,9 @@
 
 ## Sample checks status
 
+All five are driven end to end by `scripts/run_samples.py` (26/26 expectations met on
+2026-11-01, about 6 minutes in all with the request limiter on).
+
 | Check | Status |
 |---|---|
 | 1 Brightline | Single-choice lookalike question. "I meant the Inc one" restarts the check for cmp_002 |
@@ -73,6 +76,14 @@
 18. **Dracula's purple failed the chart lightness check on the dark card** (too light for a
     line series). Charts use a validated `#a07af0` in dark mode, `#8250df` in light.
 
+19. **Bursts of feedback went over Flash-Lite's 15 requests a minute** (20 RPM peak on the
+    quota page), causing 429s and fallbacks. A client-side limiter now spaces calls (14/min).
+20. **Report numbers differed between sections** (2.5 vs 2.63 after the sale). The report
+    now gets the reviewer-visible period tables recomputed and must reuse those figures,
+    naming the period for every average.
+21. **"Check complete" repeated after every feedback round**; only the first is shown now,
+    and the header progress shows a "Feedback round" step while one runs.
+
 ## Verified scenarios (live, Gemini)
 
 | Scenario | Result |
@@ -86,6 +97,7 @@
 | SIGTERM to the worker while the report streams | Graceful shutdown let the run finish; visible report == final report |
 | `kill -9` of the worker in a feedback round | "Recovering from a temporary problem (attempt 2)" shown; round and the queued next one completed |
 | Full stack via `docker compose --profile app up` | Migrate + seed, check + feedback round, UI all from containers |
+| `scripts/run_samples.py` (all five sample checks) | 26/26 pass, including a pause caught from the live stream and 11 report rounds in a row |
 | 10 feedback messages in one burst | Queued, handled one by one, workflow continued as new after 8 rounds; dedupe of old command ids survives it (workflow test) |
 
 ## Observations / open issues
@@ -104,8 +116,6 @@
   below it (events are shown in the order they happened). Clear enough with the
   "Queued" / "Applied" note under each message, and the case file always shows the
   current state.
-- Report numbers can differ slightly between sections (e.g. 2.5 vs 2.63 after the sale):
-  the change-point statistic and the period table split at slightly different dates.
 - On resume after a question, the graph re-emits the step's events; idempotency keys drop
   them in the DB, the console runner still prints them (expected).
 - `docker compose up -d` still starts only Postgres and Temporal (for development on the

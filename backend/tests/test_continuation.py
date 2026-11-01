@@ -44,3 +44,15 @@ def test_errors_are_described_for_the_reviewer():
     long = describe("x" * 1000)
     assert long["message"].startswith("The agent hit an unexpected error")
     assert len(long["detail"]) == 301
+
+
+async def test_limiter_allows_a_burst_then_waits(monkeypatch):
+    from company_check.agent import llm
+
+    clock = [1000.0]
+    monkeypatch.setattr(llm.time, "monotonic", lambda: clock[0])
+    lim = llm.PerMinuteLimiter(rpm=3)
+    assert all([lim.acquire(blocking=False) for _ in range(3)])
+    assert not lim.acquire(blocking=False)  # 4th within the minute must wait
+    clock[0] += 60
+    assert lim.acquire(blocking=False)

@@ -273,7 +273,27 @@ async def analyst(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str
         await sink.end_message(message_id)
     if agg is None:
         raise RuntimeError("LLM returned an empty response")
+    await _emit_usage(sink, message_id, agg)
     return {"messages": [message_chunk_to_message(agg)], "analyst_turns": turns + 1}
+
+
+async def _emit_usage(sink, message_id: str, msg) -> None:
+    """Token counts for one LLM call, for the per-check usage shown to the reviewer.
+    Keyed by message id, so a retried step counts once (its first attempt's tokens are not
+    shown — a small undercount, documented)."""
+    usage = getattr(msg, "usage_metadata", None)
+    if not usage:
+        return
+    await sink.emit(
+        "usage",
+        {
+            "message_id": message_id,
+            "model": msg.response_metadata.get("model_name"),
+            "input_tokens": usage.get("input_tokens", 0),
+            "output_tokens": usage.get("output_tokens", 0),
+        },
+        key=f"usage:{message_id}",
+    )
 
 
 def after_analyst(state: CheckState) -> str:
@@ -349,8 +369,10 @@ async def report(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str,
             )
         if prior:
             prompt.append(HumanMessage(CONTINUE_REPORT.format(prior=prior)))
-        prior = await _stream_continuation(sink, message_id, chat_model(), prompt, prior)
+        prior, response = await _stream_continuation(sink, message_id, chat_model(), prompt, prior)
         await sink.end_message(message_id, kind="report")
+        if response is not None:
+            await _emit_usage(sink, message_id, response)
 
     await sink.emit(
         "report",
@@ -376,15 +398,18 @@ def _style_instructions(state: CheckState) -> str:
     return "\n".join(parts)
 
 
-async def _stream_continuation(sink, message_id, llm, prompt, prior: str) -> str:
-    """Stream the model's output after `prior`; returns the full message text.
+async def _stream_continuation(sink, message_id, llm, prompt, prior: str):
+    """Stream the model's output after `prior`; returns (full message text, the aggregated
+    response for its token usage).
 
     With prior text, the first few characters are held back until we can tell whether the
     model repeated itself (see continuation.decide)."""
     text = prior
     held = ""
     decided = not prior
+    response = None
     async for chunk in llm.astream(prompt):
+        response = chunk if response is None else response + chunk
         piece = chunk.text
         if not piece:
             continue
@@ -401,7 +426,7 @@ async def _stream_continuation(sink, message_id, llm, prompt, prior: str) -> str
         text += piece
         if piece:
             await sink.delta(message_id, piece)
-    return text
+    return text, response
 
 
 async def _apply_decision(sink, message_id, prior: str, held: str) -> tuple[str, str, bool]:
