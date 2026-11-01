@@ -5,7 +5,9 @@ live streaming, interactive questions, pause/resume, feedback rounds and inline 
 
 **Stack:** Python 3.12 + FastAPI · LangGraph · Temporal · PostgreSQL · Next.js · Gemini
 
-> Work in progress. See [docs/PLAN.md](docs/PLAN.md) for the design and build order.
+> Work in progress. See [docs/PLAN.md](docs/PLAN.md) for the design and build order,
+> [docs/DECISIONS.md](docs/DECISIONS.md) for decisions and trade-offs, and
+> [docs/PROGRESS.md](docs/PROGRESS.md) for status and bugs found.
 
 ## Running locally
 
