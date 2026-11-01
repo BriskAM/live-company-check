@@ -51,13 +51,23 @@ async def seed(path: Path) -> dict[str, int]:
         )
         prev_rows += [{"company_id": c["id"], "name": n} for n in c.get("previous_names", [])]
         review_rows += [
-            {"id": r["id"], "company_id": c["id"], "date": _d(r["date"]),
-             "rating": r["rating"], "text": r["text"]}
+            {
+                "id": r["id"],
+                "company_id": c["id"],
+                "date": _d(r["date"]),
+                "rating": r["rating"],
+                "text": r["text"],
+            }
             for r in c.get("reviews", [])
         ]
         news_rows += [
-            {"id": n["id"], "company_id": c["id"], "date": _d(n["date"]),
-             "headline": n["headline"], "text": n["text"]}
+            {
+                "id": n["id"],
+                "company_id": c["id"],
+                "date": _d(n["date"]),
+                "headline": n["headline"],
+                "text": n["text"],
+            }
             for n in c.get("news", [])
         ]
 

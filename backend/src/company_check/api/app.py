@@ -1,6 +1,6 @@
 """FastAPI app: REST commands in, SSE event stream out.
 
-    uv run uvicorn company_check.api.app:app --reload
+uv run uvicorn company_check.api.app:app --reload
 """
 
 from fastapi import Depends, FastAPI

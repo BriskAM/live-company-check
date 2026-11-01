@@ -44,8 +44,12 @@ class Company(Base):
 
     __table_args__ = (
         # Fuzzy name search for lookalikes ("Brightline" vs "Brightlane").
-        Index("ix_companies_name_trgm", "name", postgresql_using="gin",
-              postgresql_ops={"name": "gin_trgm_ops"}),
+        Index(
+            "ix_companies_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
     )
 
 
@@ -58,8 +62,12 @@ class CompanyPreviousName(Base):
     name: Mapped[str] = mapped_column(String, primary_key=True)
 
     __table_args__ = (
-        Index("ix_company_previous_names_name_trgm", "name", postgresql_using="gin",
-              postgresql_ops={"name": "gin_trgm_ops"}),
+        Index(
+            "ix_company_previous_names_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
     )
 
 
@@ -148,4 +156,3 @@ class Command(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-

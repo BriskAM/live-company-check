@@ -1,6 +1,6 @@
 """Temporal worker process: runs workflows and activities.
 
-    uv run python -m company_check.worker.main
+uv run python -m company_check.worker.main
 """
 
 import asyncio
@@ -11,6 +11,8 @@ from temporalio.worker import Worker
 from company_check.config import get_settings
 from company_check.temporal_client import get_temporal_client
 from company_check.worker.workflows import CheckWorkflow
+
+log = logging.getLogger(__name__)
 
 
 async def main() -> None:
@@ -23,7 +25,7 @@ async def main() -> None:
         workflows=[CheckWorkflow],
         activities=[],
     )
-    logging.info("worker listening on task queue %r", settings.temporal_task_queue)
+    log.info("worker listening on task queue %r", settings.temporal_task_queue)
     await worker.run()
 
 
