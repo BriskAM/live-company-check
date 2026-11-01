@@ -31,6 +31,8 @@ class CheckState(TypedDict, total=False):
     recommendation: dict[str, Any]
     findings_ready: bool  # submit_findings accepted → write the report
     report: str
+    # chart_id -> {"tool", "title", "params", "version"}; data is rebuilt from state on demand
+    charts: dict[str, dict[str, Any]]
 
 
 @dataclass
@@ -77,3 +79,62 @@ class SubmitFindings(BaseModel):
     )
     recommendation: Literal["proceed", "proceed_with_caution", "do_not_proceed", "needs_more_info"]
     recommendation_reason: str
+
+
+# --- visualization tools --------------------------------------------------------
+# Every chart tool takes an optional chart_id: omit it to create a new chart, pass an existing
+# one to update that chart in place. On update, fields left out keep their previous values.
+
+
+class Marker(BaseModel):
+    date: str = Field(description="YYYY-MM-DD")
+    label: str = Field(description="Short label, e.g. 'Sold to Cobalt'")
+
+
+class ChartRatingTrend(BaseModel):
+    """Line chart of the average customer rating per month (computed from the reviews)."""
+
+    chart_id: str | None = Field(default=None, description="Existing chart to update")
+    title: str | None = None
+    last_months: int | None = Field(
+        default=None, description="Only the last N complete months (overrides start/end)"
+    )
+    start: str | None = Field(default=None, description="First month, YYYY-MM")
+    end: str | None = Field(default=None, description="Last month, YYYY-MM")
+    markers: list[Marker] | None = Field(
+        default=None, description="Dated events to mark on the chart; [] removes all markers"
+    )
+
+
+class ChartNewsTimeline(BaseModel):
+    """Timeline of the company's news items (excluded evidence is left out automatically)."""
+
+    chart_id: str | None = Field(default=None, description="Existing chart to update")
+    title: str | None = None
+    last_months: int | None = None
+    start: str | None = Field(default=None, description="First month, YYYY-MM")
+    end: str | None = Field(default=None, description="Last month, YYYY-MM")
+
+
+class Period(BaseModel):
+    label: str
+    start: str | None = Field(default=None, description="YYYY-MM-DD, inclusive; omit = open")
+    end: str | None = Field(default=None, description="YYYY-MM-DD, inclusive; omit = open")
+
+
+class TableRatingPeriods(BaseModel):
+    """Table comparing review count and average rating across labelled periods (e.g. before
+    and after an event)."""
+
+    chart_id: str | None = Field(default=None, description="Existing table to update")
+    title: str | None = None
+    periods: list[Period] | None = None
+
+
+class TableCompareCompanies(BaseModel):
+    """Table comparing similarly named companies side by side (status, dates, address,
+    review and news counts)."""
+
+    chart_id: str | None = Field(default=None, description="Existing table to update")
+    title: str | None = None
+    company_ids: list[str] | None = None

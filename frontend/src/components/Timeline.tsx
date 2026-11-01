@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CheckView, Findings, Item, Message, Tool } from "@/lib/checkState";
+import { ChartBlock } from "./ChartBlock";
 import { QuestionCard } from "./QuestionCard";
 
 const TOOL_LABELS: Record<string, string> = {
@@ -134,6 +135,14 @@ export function Timeline({
             );
           case "findings":
             return <FindingsCard key={key} findings={item.findings} />;
+          case "chart":
+            return (
+              <ChartBlock
+                key={key}
+                chart={item.chart}
+                superseded={view.latestChart[item.chart.chart_id] > item.chart.version}
+              />
+            );
           case "company":
             return (
               <div key={key} className="text-sm text-zinc-600">

@@ -11,7 +11,6 @@
 - Every node streams progress through the injected EventSink.
 """
 
-import json
 from datetime import date
 from typing import Any
 
@@ -22,12 +21,10 @@ from langchain_core.messages import (
     ToolMessage,
     message_chunk_to_message,
 )
-from langchain_core.tools import StructuredTool
 from langgraph.config import get_config
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
-from pydantic import ValidationError
 
 from company_check.agent import continuation, data
 from company_check.agent.llm import chat_model
@@ -38,13 +35,8 @@ from company_check.agent.prompts import (
     dossier,
     report_input,
 )
-from company_check.agent.state import (
-    AgentContext,
-    AskReviewer,
-    CheckState,
-    SearchNews,
-    SubmitFindings,
-)
+from company_check.agent.state import AgentContext, CheckState
+from company_check.agent.toolbox import ANALYST_TOOLS, Turn, run_call
 from company_check.db import SessionLocal
 
 # Guard against an analyst that never calls submit_findings.
@@ -57,20 +49,6 @@ def _step() -> int:
     """LangGraph superstep number: stable when a node is retried or resumed, so it makes
     deterministic message / event ids."""
     return get_config()["metadata"]["langgraph_step"]
-
-
-def _tool(schema: type, name: str) -> StructuredTool:
-    # The analyst only *requests* tools; the tools node executes them. The function is unused.
-    return StructuredTool.from_function(
-        func=lambda **_: None, name=name, description=schema.__doc__, args_schema=schema
-    )
-
-
-ANALYST_TOOLS = [
-    _tool(AskReviewer, "ask_reviewer"),
-    _tool(SearchNews, "search_news"),
-    _tool(SubmitFindings, "submit_findings"),
-]
 
 
 # --- resolve -----------------------------------------------------------------
@@ -231,16 +209,12 @@ def after_analyst(state: CheckState) -> str:
     return "tools"  # tools handles both tool calls and a missing submit_findings
 
 
-def _known_evidence(state: CheckState) -> set[str]:
-    items = [*state.get("reviews", []), *state.get("news", []), *state.get("extra_news", [])]
-    return {e["id"] for e in items} - set(state.get("excluded_ids", []))
-
-
 async def tools(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
-    sink = runtime.context.sink
+    """Execute the analyst's tool calls (see toolbox.py). A question pauses the graph here
+    via interrupt(); on resume this node re-runs, and handlers are idempotent so earlier
+    calls in the same turn are safe to repeat."""
     last = state["messages"][-1]
     assert isinstance(last, AIMessage)
-
     if not last.tool_calls:
         return {
             "messages": [
@@ -250,82 +224,17 @@ async def tools(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, 
             ]
         }
 
-    replies: list[ToolMessage] = []
-    update: dict[str, Any] = {}
-    extra_news = list(state.get("extra_news", []))
-
-    def reply(tc: dict, content: Any) -> None:
-        text = content if isinstance(content, str) else json.dumps(content)
-        replies.append(ToolMessage(content=text, tool_call_id=tc["id"], name=tc["name"]))
-
-    for tc in last.tool_calls:
-        name, args, key = tc["name"], tc["args"], f"tool:{tc['id']}"
-        try:
-            if name == "ask_reviewer":
-                q = AskReviewer.model_validate(args)
-                if q.kind != "text" and len(q.options) < 2:
-                    raise ValueError("single/multi questions need at least two options")
-                question = {
-                    "question_id": f"q-{tc['id']}",
-                    "kind": q.kind,
-                    "question": q.question,
-                    "options": [{"id": o, "label": o} for o in q.options],
-                }
-                await sink.emit("question", question, key=question["question_id"])
-                reply(tc, {"reviewer_answer": interrupt(question)})
-
-            elif name == "search_news":
-                q = SearchNews.model_validate(args)
-                await sink.emit(
-                    "tool",
-                    {"id": key, "name": name, "args": args, "status": "started"},
-                    key=f"{key}:start",
-                )
-                async with SessionLocal() as s:
-                    found = await data.search_news(s, q.text)
-                known = {n["id"] for n in [*state.get("news", []), *extra_news]}
-                extra_news += [n for n in found if n["id"] not in known]
-                await sink.emit(
-                    "tool",
-                    {
-                        "id": key,
-                        "name": name,
-                        "status": "finished",
-                        "summary": f"{len(found)} article(s)",
-                    },
-                    key=f"{key}:end",
-                )
-                reply(tc, found)
-
-            elif name == "submit_findings":
-                f = SubmitFindings.model_validate(args)
-                unknown = {i for c in f.concerns for i in c.evidence_ids} - _known_evidence(
-                    {**state, "extra_news": extra_news}
-                )
-                if unknown:
-                    raise ValueError(f"unknown or excluded evidence IDs: {sorted(unknown)}")
-                update = {
-                    "concerns": [
-                        {"id": f"c{i + 1}", **c.model_dump()} for i, c in enumerate(f.concerns)
-                    ],
-                    "open_questions": f.open_questions,
-                    "recommendation": {
-                        "decision": f.recommendation,
-                        "reason": f.recommendation_reason,
-                    },
-                    "findings_ready": True,
-                }
-                await sink.emit("findings", update, key=f"{key}:findings")
-                reply(tc, "Findings recorded.")
-
-            else:
-                raise ValueError(f"unknown tool {name!r}")
-
-        except (ValidationError, ValueError) as e:
-            # Malformed tool call: tell the model what was wrong so it can fix it next turn.
-            reply(tc, f"Error: {e}")
-
-    return {"messages": replies, "extra_news": extra_news, **update}
+    turn = Turn(state, runtime.context.sink)
+    replies = [
+        ToolMessage(content=await run_call(turn, tc), tool_call_id=tc["id"], name=tc["name"])
+        for tc in last.tool_calls
+    ]
+    return {
+        "messages": replies,
+        "extra_news": turn.extra_news,
+        "charts": turn.charts,
+        **turn.update,
+    }
 
 
 def after_tools(state: CheckState) -> str:

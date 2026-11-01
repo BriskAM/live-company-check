@@ -27,6 +27,13 @@ which sources to rely on with ask_reviewer (kind "multi", one option per source)
 answer, ask one free-text follow-up (kind "text") about what they most need to know about the \
 situation, then use that answer to focus the findings and open questions.
 - Do not ask questions the evidence already answers. Ask at most two questions in total.
+- Show the reviewer charts when they make a pattern easier to see. If the review statistics \
+report a rating shift, create a chart_rating_trend and mark the dated news event that best \
+explains it, if there is one. Use chart_news_timeline when several dated news events matter, \
+table_rating_periods to compare before and after an event, and table_compare_companies when \
+lookalike companies could be confused. At most two charts unless the reviewer asks for more.
+- To change a chart, call the same tool with its chart_id; fields you leave out keep their \
+previous values.
 - Answers and feedback from the reviewer override your own judgement.
 - Before calling tools, write one to three short sentences telling the reviewer what you \
 noticed or are about to do. Keep prose brief; the report is written separately.
@@ -79,6 +86,11 @@ def dossier(state: dict[str, Any]) -> str:
     reviews = state.get("reviews", [])
     news = state.get("news", [])
     excluded = set(state.get("excluded_ids", []))
+    others = [
+        {k: c[k] for k in ("id", "name", "status", "address")}
+        for c in state.get("candidates", [])
+        if c["id"] != company["id"]
+    ]
     summary = review_summary([r for r in reviews if r["id"] not in excluded])
     monthly = monthly_ratings([r for r in reviews if r["id"] not in excluded])
     return f"""\
@@ -96,6 +108,8 @@ get_reviews ({len(reviews)}):
 
 get_news ({len(news)}):
 {_lines(news, lambda n: f"{n['id']} | {n['date']} | {n['headline']} — {n['text']}")}
+
+Similar names (from search_companies): {json.dumps(others) if others else "none"}
 
 Excluded evidence (do not use): {sorted(excluded) or "none"}
 """

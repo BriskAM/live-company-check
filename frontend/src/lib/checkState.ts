@@ -48,11 +48,42 @@ export type Findings = {
   recommendation: { decision: string; reason: string };
 };
 
+export type RatingTrendSpec = {
+  type: "rating_trend";
+  range: { start: string | null; end: string | null };
+  data: { month: string; avg: number; count: number }[];
+  markers: { date: string; month: string; label: string }[];
+  review_count: number;
+};
+
+export type NewsTimelineSpec = {
+  type: "news_timeline";
+  events: { id: string; date: string; headline: string; text: string }[];
+  excluded: string[];
+};
+
+export type TableSpec = {
+  type: "table";
+  columns: { key: string; label: string; align?: "right" }[];
+  rows: Record<string, unknown>[];
+};
+
+export type ChartSpec = RatingTrendSpec | NewsTimelineSpec | TableSpec;
+
+export type Chart = {
+  chart_id: string;
+  version: number;
+  tool: string;
+  title: string;
+  spec: ChartSpec;
+};
+
 export type Item =
   | { kind: "tool"; id: string }
   | { kind: "message"; id: string }
   | { kind: "question"; id: string }
   | { kind: "findings"; seq: number; findings: Findings }
+  | { kind: "chart"; seq: number; chart: Chart }
   | { kind: "company"; seq: number; name: string }
   | { kind: "marker"; seq: number; text: string; tone: "info" | "warn" | "error" };
 
@@ -64,6 +95,7 @@ export type CheckView = {
   tools: Record<string, Tool>;
   messages: Record<string, Message>;
   questions: Record<string, Question>;
+  latestChart: Record<string, number>; // chart_id -> latest version seen
 };
 
 export const initialView: CheckView = {
@@ -73,6 +105,7 @@ export const initialView: CheckView = {
   tools: {},
   messages: {},
   questions: {},
+  latestChart: {},
 };
 
 const STATUS_MARKERS: Record<string, { text: string; tone: "info" | "warn" | "error" }> = {
@@ -148,6 +181,14 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
     case "answer": {
       const q = view.questions[p.question_id];
       if (q) v.questions = { ...view.questions, [p.question_id]: { ...q, answer: p.value } };
+      break;
+    }
+    case "chart": {
+      // Each version is its own timeline item, so an update appears where it happened;
+      // the timeline collapses older versions.
+      const chart = p as Chart;
+      v.items = [...v.items, { kind: "chart", seq: e.seq, chart }];
+      v.latestChart = { ...view.latestChart, [chart.chart_id]: chart.version };
       break;
     }
     case "findings":

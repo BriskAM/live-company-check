@@ -133,6 +133,27 @@ to `error` with the message and waits for the reviewer's Retry. Overloads (503),
 `submit_findings` rejects unknown or excluded evidence ids, and malformed tool calls are
 returned to the model with the error so it can fix them. A turn limit stops loops.
 
+## Visualization
+
+### Charts are specs computed from data; the LLM only picks parameters
+Four tools: `chart_rating_trend`, `chart_news_timeline`, `table_rating_periods`,
+`table_compare_companies`. Handlers compute the data from state (respecting excluded
+evidence) and emit a JSON spec the UI renders with Recharts / HTML. The LLM gets a short
+text summary back, never raw data to restate. "Last N months" is a parameter resolved in
+code against the check's as-of date, so the model does no date arithmetic.
+
+### Update by id, not a new chart
+Every chart tool takes an optional `chart_id`; with it, the call updates that chart and bumps
+its version, and omitted fields keep their previous values (a new range replaces the old
+range). The UI shows the new version where the update happened and collapses older versions
+to an "updated below" line, so the reviewer sees the change without scrolling up.
+
+### Visual rules
+One series per chart, so no legend (the title names it); no dual axis (review counts are in
+the tooltip and the data table, not on a second y-axis); 2px line, ≥8px dots with a surface
+ring; hairline solid grid; event markers as neutral annotation lines; every chart has a
+"Show data" table view.
+
 ## Testing
 - Unit tests for search, stats and company picking (seeded DB).
 - Workflow tests on Temporal's time-skipping server with fake activities: answers and

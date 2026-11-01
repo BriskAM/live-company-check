@@ -9,7 +9,7 @@
 | M2 | Temporal workflow, event log, SSE, live UI | ✅ done |
 | M3 | Questions (single / multi / text), idempotent answers | ✅ done (with M2) |
 | M4 | Pause mid-writing, restart survival, long pauses | ✅ done |
-| M5 | Visualization tools + chart feedback | ⏳ |
+| M5 | Visualization tools (4), inline charts/tables, update-by-id | ✅ done (chart *feedback* arrives with M6's message path) |
 | M6 | Feedback rounds with selective recompute | ⏳ |
 | M7 | Failure polish, README, architecture diagram, demo | ⏳ |
 
@@ -19,7 +19,7 @@
 |---|---|
 | 1 Brightline | Single-choice lookalike question ✅. Monthly chart (M5), switch to Inc (M6) pending |
 | 2 Northwind | Agent already excludes the clinic articles on its own ✅. Feedback flow (M6) pending |
-| 3 Pinecrest | Rating drop found ✅. Charts (M5) pending |
+| 3 Pinecrest | Rating drop found ✅. Agent charts it unprompted with the sale marked, plus a before/after table ✅. Chart feedback (M6) pending |
 | 4 Copperleaf | Leafline data exposure found ✅. Pause mid-report + resume continues the text ✅. Worker/API restart ✅. Long pause across Temporal restart ✅ |
 | 5 Harborview | Multi-choice → free-text → focused findings ✅. Feedback rounds (M6) pending |
 
@@ -45,6 +45,9 @@
 8. **Billing errors were retried 4 times.** A 402 "prepayment credits are depleted" can't fix
    itself. Permanent LLM errors (401/402/403, invalid key) now fail fast as non-retryable;
    the check shows the error and waits for Retry. 429/503/timeouts still retry.
+9. **Agent's before/after table counted every review as "after".** It left the second
+   period unbounded. Periods are now validated (bounded, non-overlapping, month-only dates
+   normalised) and a bad call goes back to the model, which then fixed it.
 
 ## Verified scenarios (live, Gemini)
 
