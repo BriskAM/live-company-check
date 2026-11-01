@@ -1,0 +1,165 @@
+/**
+ * The check page is a pure fold over the server's event log.
+ *
+ * Live updates and a full replay after a refresh go through the same reducer, so what the
+ * reviewer sees after a refresh is exactly what they saw before — no gaps, no repeats.
+ */
+
+export type CheckEvent = {
+  seq: number;
+  type: string;
+  // Shape depends on `type`; the reducer narrows it per case.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload: Record<string, any>;
+  ts: string;
+};
+
+export type Option = { id: string; label: string };
+
+export type Question = {
+  question_id: string;
+  kind: "single" | "multi" | "text";
+  question: string;
+  options: Option[];
+  answer?: unknown;
+};
+
+export type Tool = {
+  id: string;
+  name: string;
+  args?: Record<string, unknown>;
+  status: "started" | "finished";
+  summary?: string;
+};
+
+export type Message = { id: string; text: string; done: boolean; kind: "agent" | "report" };
+
+export type Concern = {
+  id: string;
+  title: string;
+  detail: string;
+  severity: "low" | "medium" | "high";
+  evidence_ids: string[];
+};
+
+export type Findings = {
+  concerns: Concern[];
+  open_questions: string[];
+  recommendation: { decision: string; reason: string };
+};
+
+export type Item =
+  | { kind: "tool"; id: string }
+  | { kind: "message"; id: string }
+  | { kind: "question"; id: string }
+  | { kind: "findings"; seq: number; findings: Findings }
+  | { kind: "company"; seq: number; name: string }
+  | { kind: "marker"; seq: number; text: string; tone: "info" | "warn" | "error" };
+
+export type CheckView = {
+  lastSeq: number;
+  status: string;
+  error?: string;
+  items: Item[];
+  tools: Record<string, Tool>;
+  messages: Record<string, Message>;
+  questions: Record<string, Question>;
+};
+
+export const initialView: CheckView = {
+  lastSeq: 0,
+  status: "starting",
+  items: [],
+  tools: {},
+  messages: {},
+  questions: {},
+};
+
+const STATUS_MARKERS: Record<string, { text: string; tone: "info" | "warn" | "error" }> = {
+  paused: { text: "Paused by reviewer", tone: "warn" },
+  completed: { text: "Check complete", tone: "info" },
+  error: { text: "The agent hit an error", tone: "error" },
+};
+
+export function reduce(view: CheckView, e: CheckEvent): CheckView {
+  if (e.seq <= view.lastSeq) return view; // already applied (reconnect overlap)
+  const v: CheckView = { ...view, lastSeq: e.seq };
+  const p = e.payload;
+
+  switch (e.type) {
+    case "status": {
+      const wasPaused = view.status === "paused";
+      v.status = p.status;
+      v.error = p.status === "error" ? p.message : undefined;
+      const marker = STATUS_MARKERS[p.status];
+      if (marker) v.items = [...v.items, { kind: "marker", seq: e.seq, ...marker }];
+      else if (wasPaused && p.status !== "paused")
+        v.items = [...v.items, { kind: "marker", seq: e.seq, text: "Resumed", tone: "info" }];
+      break;
+    }
+    case "tool": {
+      const prev = view.tools[p.id];
+      v.tools = { ...view.tools, [p.id]: { ...prev, ...p } as Tool };
+      if (!prev) v.items = [...v.items, { kind: "tool", id: p.id }];
+      break;
+    }
+    case "message_start": {
+      // Also sent when a step is retried: discard any half-streamed text for this id.
+      const prev = view.messages[p.message_id];
+      v.messages = {
+        ...view.messages,
+        [p.message_id]: { id: p.message_id, text: "", done: false, kind: prev?.kind ?? kindOf(p.message_id) },
+      };
+      if (!prev) v.items = [...v.items, { kind: "message", id: p.message_id }];
+      break;
+    }
+    case "message_delta": {
+      const m = view.messages[p.message_id] ?? {
+        id: p.message_id,
+        text: "",
+        done: false,
+        kind: kindOf(p.message_id),
+      };
+      if (!view.messages[p.message_id]) v.items = [...v.items, { kind: "message", id: p.message_id }];
+      v.messages = { ...view.messages, [p.message_id]: { ...m, text: m.text + p.text } };
+      break;
+    }
+    case "message_end": {
+      const m = view.messages[p.message_id];
+      if (m) v.messages = { ...view.messages, [p.message_id]: { ...m, done: true } };
+      break;
+    }
+    case "report": {
+      // Authoritative full text of a finished report.
+      const m = view.messages[p.message_id];
+      if (!m) v.items = [...v.items, { kind: "message", id: p.message_id }];
+      v.messages = {
+        ...view.messages,
+        [p.message_id]: { id: p.message_id, text: p.markdown, done: true, kind: "report" },
+      };
+      break;
+    }
+    case "question": {
+      const prev = view.questions[p.question_id];
+      v.questions = { ...view.questions, [p.question_id]: { ...(p as Question), answer: prev?.answer } };
+      if (!prev) v.items = [...v.items, { kind: "question", id: p.question_id }];
+      break;
+    }
+    case "answer": {
+      const q = view.questions[p.question_id];
+      if (q) v.questions = { ...view.questions, [p.question_id]: { ...q, answer: p.value } };
+      break;
+    }
+    case "findings":
+      v.items = [...v.items, { kind: "findings", seq: e.seq, findings: p as Findings }];
+      break;
+    case "company_selected":
+      v.items = [...v.items, { kind: "company", seq: e.seq, name: p.name }];
+      break;
+  }
+  return v;
+}
+
+function kindOf(messageId: string): Message["kind"] {
+  return messageId.startsWith("report:") ? "report" : "agent";
+}
