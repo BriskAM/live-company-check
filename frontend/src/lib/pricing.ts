@@ -6,6 +6,7 @@
 const PRICES: [prefix: string, input: number, output: number][] = [
   ["gemini-3.5-flash-lite", 0.3, 2.5],
   ["gemini-3.5-flash", 1.5, 9.0],
+  ["gemini-3.1-flash-lite", 0.25, 1.5],
 ];
 
 /** Estimated cost of one call, or 0 for a model without a known price. */

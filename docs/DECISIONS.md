@@ -116,9 +116,11 @@ arriving before the activity has stopped is not mistaken for an error.
 
 ## LLM
 
-### Gemini 3.5 Flash-Lite, falling back to 3.5 Flash
-Flash-Lite is primary because it stretches the free-tier quota further and is faster; Flash
-is the fallback (separate quota). Candidates were probed on 2026-11-01: 2.5 models are unavailable to new keys, pro models
+### Gemini 3.5 Flash-Lite, falling back to 3.1 Flash-Lite
+3.5 Flash-Lite is primary because it stretches the free-tier quota further and is fast.
+3.1 Flash-Lite is the fallback: a separate free quota (15 RPM, 500 a day, against 5 and 20
+for 3.5 Flash), so it can carry a demo when the primary's daily limit runs out. 3.5 Flash
+was the fallback until that limit came close on 2026-11-01. Candidates were probed on 2026-11-01: 2.5 models are unavailable to new keys, pro models
 have zero free-tier quota, and 3.6–3.8 Flash often returned 503. Fallback triggers on any
 error before the first streamed chunk, so one message never mixes models.
 

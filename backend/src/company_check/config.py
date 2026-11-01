@@ -15,11 +15,11 @@ class Settings(BaseSettings):
 
     llm_model: str = "gemini-3.5-flash-lite"
     # Used when the primary model is overloaded (503) or rate limited (429).
-    llm_fallback_model: str | None = "gemini-3.5-flash"
+    llm_fallback_model: str | None = "gemini-3.1-flash-lite"
     # Requests per minute we allow ourselves, a little under the provider's limit (free tier:
     # 15 for Flash-Lite, 5 for Flash). Calls over it wait instead of failing. 0 = no limit.
     llm_rpm: int = 14
-    llm_fallback_rpm: int = 4
+    llm_fallback_rpm: int = 14
     llm_provider: str = "google_genai"
     google_api_key: str | None = None
 

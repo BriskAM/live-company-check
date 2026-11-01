@@ -34,7 +34,7 @@ flowchart LR
         K[("LangGraph checkpoints")]
     end
 
-    LLM["Gemini<br/>Flash-Lite, Flash fallback"]
+    LLM["Gemini<br/>3.5 Flash-Lite, 3.1 Flash-Lite fallback"]
 
     UI -- "POST with command_id" --> REST
     REST -- "insert" --> C

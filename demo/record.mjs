@@ -124,7 +124,7 @@ const ARCH = `<style>${SLIDE_CSS}</style><div class="wrap">
     <div class="arrow">→</div>
     <div class="box hl"><div class="k">Temporal</div><div class="v">One workflow per check: questions, pause, retries, queued feedback, continue-as-new.</div></div>
     <div class="arrow">→</div>
-    <div class="box hl"><div class="k">LangGraph</div><div class="v">The agent, checkpointed every step. Gemini Flash-Lite with a Flash fallback.</div></div>
+    <div class="box hl"><div class="k">LangGraph</div><div class="v">The agent, checkpointed every step. Gemini 3.5 Flash-Lite, falling back to 3.1 Flash-Lite.</div></div>
   </div>
   <div class="db"><b>Postgres</b> · company data · append-only event log with per-check sequence and idempotency keys · LangGraph checkpoints</div>
   <div class="stats">
@@ -446,7 +446,7 @@ async function pinecrest() {
   await startCheck("Pinecrest Home Services");
   await working(() => waitStatus(["completed"]));
   await show(CHART);
-  await caption("The agent noticed the drop and charted it without being asked.", ch);
+  await caption("The agent noticed the drop and charted it without being asked: inline where it made it, and in the case file.", ch);
   await hold(3500);
   await click(() => page.locator(CHART).first().getByRole("button", { name: "Feedback" }));
   await caption("Feedback can target a chart, a concern, an evidence item or the report.", ch);
@@ -454,7 +454,7 @@ async function pinecrest() {
   await click(sendButton);
   await working(() => waitRound());
   await show(CHART);
-  await caption("Same chart, new version: only it was recomputed, nothing else.", ch);
+  await caption("Same chart, version 2: the old version stays in the stream, dimmed. Nothing else was recomputed.", ch);
   await hold(3500);
   await feedback("Mark the date the company was sold on the chart.");
   await working(() => waitRound());

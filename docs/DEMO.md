@@ -57,7 +57,7 @@ cd ../frontend && npm run dev                            # UI
   UI is a pure reducer over events, which is why it's testable.
 - **Selective recompute:** feedback runs a small round with patch tools (exclude evidence,
   update findings, revise report, update chart) on a compact context, not a full re-run.
-- **Free-tier constraints shaped choices:** Flash-Lite with a Flash fallback, a client-side
+- **Free-tier constraints shaped choices:** 3.5 Flash-Lite with a 3.1 Flash-Lite fallback (separate free quotas), a client-side
   request limiter, token usage shown per check.
 - **What the agent can't do:** it only sees the seeded data; sample checks are test-only and
   never reach the agent.

@@ -120,7 +120,9 @@ All five are driven end to end by `scripts/run_samples.py` (26/26 expectations m
   short window; the Flash-Lite fallback handled every one. A paid key is being arranged.
 - **Second API key (2026-11-01) is on a prepaid project with no credit** → every model
   returns 402. Back on the free key; primary model switched to **3.5 Flash-Lite** (lasts
-  longer on free quota), falling back to 3.5 Flash.
+  longer on free quota), falling back to 3.5 Flash. On 2026-11-01 the fallback moved to
+  **3.1 Flash-Lite** (15 RPM / 500 RPD free, vs 5 / 20 for Flash) as the primary neared its
+  daily limit.
 - **Gemini streams in large chunks** (~150–250 chars per chunk), so the "mid-writing" window
   is a couple of seconds. The longer report (Customer reviews section) widens it.
 - Analyst messages (1–3 sentences before tool calls) are restarted, not continued, after an
