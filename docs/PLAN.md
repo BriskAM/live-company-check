@@ -127,6 +127,12 @@ Stretch (only if time): report diff since last feedback, per-check AI cost, edit
   pause/resume, duplicate signals, activity failure + retry.
 - A scripted runner that drives the 5 sample checks through the API (sample checks stay in tests only).
 
-## 7. Open decisions
-- **LLM provider/model** — default: Anthropic Claude via `langchain-anthropic` (streaming + tool use).
+## 7. Decisions
+- **LLM provider/model** — Google Gemini via `langchain-google-genai` (free API key from
+  Google AI Studio; supports streaming + tool calling). Default model `gemini-2.5-flash`,
+  set by `LLM_MODEL` env var. The model is created in one factory (`init_chat_model`), so
+  switching provider is a config change, not a code change.
+  - Free-tier rate limits (low requests/minute) → 429s are treated as retryable in the
+    activity retry policy with exponential backoff; keep agent steps few and batched.
+  - A **fake LLM** (scripted responses) is used in tests so CI never needs a key.
 - **Deployment** — default: local Docker Compose for demo; optional Neon (Postgres) + Vercel (UI).
