@@ -1,0 +1,1 @@
+"""Live Company Check backend."""
