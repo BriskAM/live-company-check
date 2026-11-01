@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     temporal_namespace: str = "default"
     temporal_task_queue: str = "company-check"
 
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-3.5-flash"
+    # Used when the primary model is overloaded (503) or rate limited (429).
+    llm_fallback_model: str | None = "gemini-3.5-flash-lite"
     llm_provider: str = "google_genai"
     google_api_key: str | None = None
 

@@ -129,10 +129,15 @@ Stretch (only if time): report diff since last feedback, per-check AI cost, edit
 
 ## 7. Decisions
 - **LLM provider/model** — Google Gemini via `langchain-google-genai` (free API key from
-  Google AI Studio; supports streaming + tool calling). Default model `gemini-2.5-flash`,
-  set by `LLM_MODEL` env var. The model is created in one factory (`init_chat_model`), so
-  switching provider is a config change, not a code change.
-  - Free-tier rate limits (low requests/minute) → 429s are treated as retryable in the
-    activity retry policy with exponential backoff; keep agent steps few and batched.
+  Google AI Studio; supports streaming + tool calling). The model is created in one factory,
+  so switching provider is a config change, not a code change.
+  - Primary `gemini-3.5-flash` (`LLM_MODEL`), fallback `gemini-3.5-flash-lite`
+    (`LLM_FALLBACK_MODEL`). Chosen by probing the key on 2026-11-01:
+    - 2.5 models: not available to new keys. Pro models (`gemini-4-argon`, `3.1-pro`): free-tier
+      quota is 0. 3.6/3.7/3.8 Flash: frequent 503 "high demand" on the free tier.
+    - 3.5 Flash and 3.5 Flash-Lite: streamed tool calls and structured output worked every time,
+      and both correctly excluded wrong-entity evidence in a Northwind-style test.
+  - 503 (overloaded) and 429 (rate limit) → fall back to the second model, then the activity
+    retry policy backs off. Keep LLM calls per check few.
   - A **fake LLM** (scripted responses) is used in tests so CI never needs a key.
 - **Deployment** — default: local Docker Compose for demo; optional Neon (Postgres) + Vercel (UI).
