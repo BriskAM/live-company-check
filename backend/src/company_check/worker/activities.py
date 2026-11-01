@@ -7,6 +7,7 @@ from typing import Any
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from langgraph.types import Command
 from temporalio import activity
+from temporalio.exceptions import ApplicationError
 
 from company_check.agent.graph import build_graph
 from company_check.agent.state import AgentContext
@@ -15,6 +16,22 @@ from company_check.pg import get_pool
 from company_check.worker.types import EmitInput, RunAgentInput, RunAgentResult
 
 HEARTBEAT_EVERY_S = 1
+
+# LLM errors that retrying cannot fix (bad key, no billing, no access). Overloads (503),
+# rate limits (429) and timeouts are left retryable.
+PERMANENT_LLM_ERRORS = (
+    " 401 ",
+    " 402 ",
+    " 403 ",
+    "API_KEY_INVALID",
+    "PERMISSION_DENIED",
+    "credits are depleted",
+)
+
+
+def _is_permanent(e: Exception) -> bool:
+    text = f" {e} "
+    return any(marker in text for marker in PERMANENT_LLM_ERRORS)
 
 
 async def _heartbeat() -> None:
@@ -73,6 +90,16 @@ async def run_agent(inp: RunAgentInput) -> RunAgentResult:
         # Paused (or worker shutting down): persist the text streamed so far, then stop.
         with contextlib.suppress(Exception):
             await sink.flush()
+        raise
+    except Exception as e:
+        with contextlib.suppress(Exception):
+            await sink.flush()
+        if _is_permanent(e):
+            # Fail fast: the workflow shows the error and waits for the reviewer to retry
+            # (e.g. after fixing the key) instead of burning retries.
+            raise ApplicationError(
+                f"LLM configuration problem: {e}", type="LLMConfigError", non_retryable=True
+            ) from e
         raise
     finally:
         hb.cancel()

@@ -40,6 +40,9 @@
 5. **Pausing a finished check returned 500.** Signals to a completed workflow now return 409.
 6. **Harborview never asked the free-text follow-up.** The prompt made it optional; made it a
    firm step after the reviewer picks sources in a conflict.
+8. **Billing errors were retried 4 times.** A 402 "prepayment credits are depleted" can't fix
+   itself. Permanent LLM errors (401/402/403, invalid key) now fail fast as non-retryable;
+   the check shows the error and waits for Retry. 429/503/timeouts still retry.
 7. **Ruff picked up a global config** (B008 flags FastAPI's `Depends`). Project now pins its
    own lint rules.
 
@@ -47,6 +50,8 @@
 
 - **Free-tier rate limits (429) on 3.5 Flash** were hit on 2026-11-01 after ~30 calls in a
   short window; the Flash-Lite fallback handled every one. A paid key is being arranged.
+- **Second API key (2026-11-01) is on a prepaid project with no credit** → every model
+  returns 402. Needs credit added in AI Studio before live LLM testing can continue.
 - **Gemini streams in large chunks** (a 300-word report arrives in ~7 chunks within ~2 s), so
   the "mid-writing" window for pause is short. Addressed in M4.
 - On resume after a question, the graph re-emits the step's events; idempotency keys drop

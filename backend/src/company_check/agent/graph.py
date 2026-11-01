@@ -29,9 +29,15 @@ from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from pydantic import ValidationError
 
-from company_check.agent import data
+from company_check.agent import continuation, data
 from company_check.agent.llm import chat_model
-from company_check.agent.prompts import ANALYST_SYSTEM, REPORT_SYSTEM, dossier, report_input
+from company_check.agent.prompts import (
+    ANALYST_SYSTEM,
+    CONTINUE_REPORT,
+    REPORT_SYSTEM,
+    dossier,
+    report_input,
+)
 from company_check.agent.state import (
     AgentContext,
     AskReviewer,
@@ -330,23 +336,60 @@ def after_tools(state: CheckState) -> str:
 
 
 async def report(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
+    """Stream the report. If an earlier attempt was cut off (pause, crash), continue the text
+    the reviewer already saw instead of starting over."""
     sink = runtime.context.sink
     message_id = f"report:{_step()}"
-    llm = chat_model()
-    parts: list[str] = []
-    async for chunk in llm.astream(
-        [
+    prior, finished = await sink.resume_message(message_id)
+
+    if not finished:
+        prompt = [
             SystemMessage(REPORT_SYSTEM.format(as_of=state["as_of"])),
             HumanMessage(report_input(state)),
         ]
-    ):
-        if chunk.text:
-            parts.append(chunk.text)
-            await sink.delta(message_id, chunk.text)
-    text = "".join(parts)
-    await sink.end_message(message_id, kind="report")
-    await sink.emit("report", {"message_id": message_id, "markdown": text}, key=message_id)
-    return {"report": text}
+        if prior:
+            prompt.append(HumanMessage(CONTINUE_REPORT.format(prior=prior)))
+        prior = await _stream_continuation(sink, message_id, chat_model(), prompt, prior)
+        await sink.end_message(message_id, kind="report")
+
+    await sink.emit("report", {"message_id": message_id, "markdown": prior}, key=message_id)
+    return {"report": prior}
+
+
+async def _stream_continuation(sink, message_id, llm, prompt, prior: str) -> str:
+    """Stream the model's output after `prior`; returns the full message text.
+
+    With prior text, the first few characters are held back until we can tell whether the
+    model repeated itself (see continuation.decide)."""
+    text = prior
+    held = ""
+    decided = not prior
+    async for chunk in llm.astream(prompt):
+        piece = chunk.text
+        if not piece:
+            continue
+        if not decided:
+            held += piece
+            if len(held) < continuation.DECIDE_AFTER:
+                continue
+            piece, text, decided = await _apply_decision(sink, message_id, prior, held)
+        text += piece
+        if piece:
+            await sink.delta(message_id, piece)
+    if not decided:  # short continuation that never reached DECIDE_AFTER
+        piece, text, _ = await _apply_decision(sink, message_id, prior, held)
+        text += piece
+        if piece:
+            await sink.delta(message_id, piece)
+    return text
+
+
+async def _apply_decision(sink, message_id, prior: str, held: str) -> tuple[str, str, bool]:
+    mode, drop = continuation.decide(prior, held)
+    if mode == "restart":
+        await sink.restart_message(message_id)
+        return held, "", True
+    return held[drop:], prior, True
 
 
 # --- graph -------------------------------------------------------------------

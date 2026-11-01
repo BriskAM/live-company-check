@@ -39,6 +39,10 @@ given. Today is {as_of}.
 Write Markdown with exactly these sections:
 ## Summary
 Two to four sentences.
+## Customer reviews
+How ratings developed over time (use the monthly figures given; name the periods and their \
+average ratings), the main recurring themes in praise and complaints, and anything unusual. \
+Cite a few representative review IDs. One or two short paragraphs.
 ## Concerns
 One bullet per concern: **Title** (severity) — explanation, citing evidence IDs in square \
 brackets like [ev_news_001_02]. Write "No significant concerns." if there are none.
@@ -48,8 +52,21 @@ Bullets. Write "None." if there are none.
 One of: Proceed / Proceed with caution / Do not proceed / Needs more information — followed \
 by one or two sentences of reasoning.
 
-Use only the findings and evidence given; cite only IDs that appear there. At most 300 words.
+Use only the findings and evidence given; cite only IDs that appear there. At most 450 words.
 """
+
+
+CONTINUE_REPORT = """\
+Your previous attempt at this report was interrupted. The reviewer has already seen this \
+text, word for word:
+
+<<<
+{prior}
+>>>
+
+Continue the report from exactly where that text stops. Output only the continuation: do \
+not repeat any of the text above and do not start over. If it stops mid-word or \
+mid-sentence, continue that word or sentence."""
 
 
 def _lines(items: list[dict[str, Any]], fmt) -> str:
@@ -96,6 +113,10 @@ def report_input(state: dict[str, Any]) -> str:
     return f"""\
 Company record: {json.dumps(state["company"])}
 Review statistics: {json.dumps(review_summary(reviews))}
+Monthly average rating: {json.dumps(monthly_ratings(reviews))}
+
+Reviews ({len(reviews)}):
+{_lines(reviews, lambda r: f"{r['id']} | {r['date']} | {r['rating']}/5 | {r['text']}")}
 
 Findings:
 concerns = {json.dumps(state.get("concerns", []), indent=1)}

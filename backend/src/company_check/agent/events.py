@@ -2,7 +2,7 @@
 
 Nodes never know where events go. The sink is injected through LangGraph's runtime context:
 - ConsoleSink: prints, for the CLI runner and debugging.
-- (M2) PostgresSink: appends to check_events and NOTIFYs the API's SSE stream.
+- PostgresSink (event_store.py): appends to check_events and NOTIFYs the SSE stream.
 
 Event keys: events that may be re-emitted when a step is retried (activity retry, resume after
 an interrupt) carry a deterministic `key`, so the durable sink can drop duplicates.
@@ -19,6 +19,15 @@ class EventSink(Protocol):
         ...
 
     async def end_message(self, message_id: str, **payload: Any) -> None: ...
+
+    async def resume_message(self, message_id: str) -> tuple[str, bool]:
+        """Text already streamed for this message by an earlier attempt, and whether it
+        finished. Later deltas append to it."""
+        ...
+
+    async def restart_message(self, message_id: str) -> None:
+        """Throw away earlier partial text for this message and start it again."""
+        ...
 
 
 class ConsoleSink:
@@ -42,4 +51,10 @@ class ConsoleSink:
         print(text, end="", flush=True)
 
     async def end_message(self, message_id: str, **payload: Any) -> None:
+        self._close_line()
+
+    async def resume_message(self, message_id: str) -> tuple[str, bool]:
+        return "", False
+
+    async def restart_message(self, message_id: str) -> None:
         self._close_line()

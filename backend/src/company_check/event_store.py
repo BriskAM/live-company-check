@@ -72,6 +72,34 @@ async def read_events(
         return await cur.fetchall()
 
 
+async def message_progress(
+    pool: AsyncConnectionPool, check_id: str, message_id: str
+) -> tuple[str, bool]:
+    """Text already streamed for a message in its latest attempt, and whether it finished.
+
+    Used to continue a message after a pause or a worker crash instead of rewriting it.
+    """
+    async with pool.connection() as conn:
+        cur = await conn.execute(
+            """
+            WITH latest AS (
+                SELECT COALESCE(max(seq), 0) AS start FROM check_events
+                WHERE check_id = %(c)s AND type = 'message_start'
+                  AND payload->>'message_id' = %(m)s
+            )
+            SELECT type, payload->>'text' AS text FROM check_events, latest
+            WHERE check_id = %(c)s AND seq > latest.start
+              AND type IN ('message_delta', 'message_end')
+              AND payload->>'message_id' = %(m)s
+            ORDER BY seq
+            """,
+            {"c": check_id, "m": message_id},
+        )
+        rows = await cur.fetchall()
+    text = "".join(r["text"] for r in rows if r["type"] == "message_delta")
+    return text, any(r["type"] == "message_end" for r in rows)
+
+
 class PostgresSink:
     """EventSink that writes to check_events.
 
@@ -102,6 +130,20 @@ class PostgresSink:
 
     async def end_message(self, message_id: str, **payload: Any) -> None:
         await self.emit("message_end", {"message_id": message_id, **payload})
+
+    async def resume_message(self, message_id: str) -> tuple[str, bool]:
+        """Return (text so far, finished) and continue appending to it, without a reset."""
+        await self.flush()
+        text, finished = await message_progress(self.pool, self.check_id, message_id)
+        if text:
+            self._started.add(message_id)
+        return text, finished
+
+    async def restart_message(self, message_id: str) -> None:
+        """Discard what was streamed for this message (UI clears it) and start over."""
+        await self.flush()
+        self._started.add(message_id)
+        await self.emit("message_start", {"message_id": message_id})
 
     async def flush(self) -> None:
         self._last_flush = time.monotonic()
