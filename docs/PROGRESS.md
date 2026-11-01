@@ -1,5 +1,31 @@
 # Progress Log
 
+## Final repository housekeeping (2026-11-01)
+
+- Added GitHub Actions for backend tests with seeded Postgres, lint and formatting, and
+  frontend tests, type checks, lint and production build. Live LLM samples remain manual.
+- Added a frontend Docker ignore file so local dependencies, build output and environment
+  files cannot enter its build context. The root context now also excludes private notes
+  and generated demo output.
+- Corrected README prerequisites, locked npm install instructions, test commands and worker
+  restart instructions; documented seeded data and the local demo's deployment limits.
+- Fixed the Alembic environment's formatting check and the stale fallback RPM in DECISIONS.
+- Updated Next.js and its ESLint config to 15.5.28, refreshed compatible dependencies,
+  upgraded Vitest to 4.1.12 and scoped a patched PostCSS override to Next.js.
+- Verified 42 backend tests, backend lint/formatting and the Python lockfile. After the
+  dependency updates, a clean `npm ci`, all 6 frontend tests, type check, lint and production
+  build pass. The production npm audit reports zero vulnerabilities. The full audit retains
+  14 moderate findings in the lint-tool dependency chain (minimatch); resolving these needs
+  a separate tooling compatibility review.
+- Scanned tracked files and local Git history for common Google/GitHub token and private-key
+  patterns, and confidential file paths: no matches. This is a pattern scan, not proof that
+  arbitrary secrets cannot exist.
+- Local demo tooling passed JavaScript syntax checks and both standalone failure tests.
+  No demo reset or live LLM sample run was performed in this pass.
+- Demo tooling is ignored, recording notes and Excalidraw sources are kept under `private/`,
+  and public documentation keeps only the rendered architecture diagram. Previously tracked
+  demo files are removed from the index while local copies are preserved.
+
 ## Milestones
 
 | # | Milestone | Status |
@@ -14,7 +40,7 @@
 | M7 | Failure polish, full Compose stack, README, architecture diagrams | Done |
 | M8 | Frontend: split view (activity + case file), light/dark themes after amehta.space, progress steps, mobile tabs | Done |
 | M9 | Pre-demo: request limiter, token and cost estimate, sample-check runner, fresh-clone Docker test, automated demo video | Done |
-| Demo | Automated video (`demo/`), narrated plan (`docs/DEMO.md`) | Done |
+| Demo | Recorded walkthrough (kept privately) | Done |
 
 ## Sample checks status
 

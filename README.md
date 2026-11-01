@@ -10,6 +10,8 @@ live streaming, interactive questions, pause/resume, feedback rounds and inline 
 - [docs/PROGRESS.md](docs/PROGRESS.md): status, bugs found, verified scenarios
 - [docs/PLAN.md](docs/PLAN.md): the original plan and build order
 
+![Live Company Check architecture](docs/diagrams/architecture.svg)
+
 ## What it does
 
 | Requirement | How |
@@ -49,7 +51,7 @@ service creates the tables and loads the companies from `data/dummy_data.json` (
 
 ## Development setup
 
-Prerequisites: Docker, [uv](https://docs.astral.sh/uv/), Node 20+.
+Prerequisites: Docker, [uv](https://docs.astral.sh/uv/), Python 3.12, Node 22+.
 
 ```bash
 cp .env.example .env            # add your GOOGLE_API_KEY
@@ -64,23 +66,32 @@ uv run uvicorn company_check.api.app:app --reload --port 8000   # API
 uv run python -m company_check.worker.main                      # worker (2nd terminal)
 
 cd ../frontend
-npm install
+npm ci
 npm run dev                     # http://localhost:3000
 ```
 
 Health check: `curl localhost:8000/health` returns `{"database":"ok","temporal":"ok"}`.
 
+Restart the worker after changing agent or workflow code; it does not reload automatically.
+
+This is a local development setup using seeded company records, reviews and news. It has no
+authentication or per-user access control. Add those before exposing it publicly. Temporal
+runs in development mode with SQLite persistence; see the deployment trade-offs in
+[docs/DECISIONS.md](docs/DECISIONS.md#deployment).
+
 ## Tests
 
 ```bash
-cd backend && uv run pytest     # needs Postgres running and seeded; never calls the LLM
-cd frontend && npm test && npx tsc --noEmit && npm run lint   # reducer tests: replay, reconnect, restarts
+(cd backend && uv run pytest && uv run ruff check . && uv run ruff format --check .)
+(cd frontend && npm test && npx tsc --noEmit && npm run lint && npm run build)
 ```
 
 Workflow tests run on Temporal's time-skipping test server with fake activities (questions,
 double clicks, pause and resume, answers while paused, an 8-hour pause, retry after failure,
 queued feedback, continue-as-new). Agent pieces are tested without the LLM; the agent itself
-is exercised live with the scripts below.
+is exercised live with the scripts below. Backend tests need Postgres running and seeded;
+workflow tests download and start Temporal's test server. CI runs these checks and the
+frontend production build without an LLM key.
 
 ## Scenario scripts
 

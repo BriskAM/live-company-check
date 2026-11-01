@@ -11,3 +11,6 @@
 *.docx
 *.pdf
 .claude
+private
+demo
+**/*.excalidraw

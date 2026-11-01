@@ -31,3 +31,7 @@ dist/
 # Local tooling
 .claude/
 private/
+
+# Local presentation tooling and editable diagram sources
+/demo/
+*.excalidraw

@@ -54,8 +54,9 @@ frontend/src/
   lib/api.ts, pricing.ts   API client; cost estimate per model
   app/checks/[id]/page.tsx check page: header, activity stream (left), case file (right)
   components/              Timeline, CaseFile, ChartBlock, QuestionCard, FeedbackBox, ...
-demo/                      automated demo recorder (record.mjs) and video builder (build.mjs)
-docs/                      ARCHITECTURE (diagrams), DECISIONS, PROGRESS, DEMO, PLAN
+demo/                      local demo tooling (ignored; keep private)
+private/                   private notes, editable diagram sources (ignored)
+docs/                      ARCHITECTURE (rendered diagrams), DECISIONS, PROGRESS, PLAN
 ```
 
 ## Run it
@@ -104,10 +105,8 @@ a minute, a few hundred a day), so run single checks (`run_samples.py check_3`) 
   add a test in `tests/test_workflow.py` (time-skipping test server, fake activities).
   Changing workflow code breaks replay of running checks: run `scripts/reset_demo.py --yes`
   locally if old checks get stuck.
-- **Record the demo video:** API, worker and UI running, then
-  `cd demo && npm install && node record.mjs && node build.mjs` → `demo/out/demo.mp4`.
-  It clears all checks first. Chrome is relaunched every ~24 s on purpose (some machines
-  kill headless Chrome after ~30 s); the event log replay makes the cuts invisible.
+- **Record the demo video:** local instructions are in `private/DEMO.md`; demo tooling,
+  recordings and editable Excalidraw sources must stay ignored. Recording clears all checks.
 - **Clear checks before a demo:** `cd backend && uv run python scripts/reset_demo.py --yes`.
 
 ## Gotchas

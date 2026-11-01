@@ -4,6 +4,10 @@ Each concern has one owner. Temporal decides **when** the agent runs, LangGraph 
 **what** it does, Postgres stores **what the reviewer sees**, and the browser folds that
 log into the UI.
 
+The diagram covers the system, agent flow and recovery guarantees.
+
+![System architecture and agent flow](diagrams/architecture.svg)
+
 ## Components
 
 ```mermaid

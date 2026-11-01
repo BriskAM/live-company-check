@@ -143,8 +143,8 @@ a feedback round, no tools. Failing outright would be retried into the same wall
 
 ### Requests are spaced client-side
 Each model gets a sliding-window limiter (`LLM_RPM`, default 14, under Flash-Lite's free
-15 RPM; `LLM_FALLBACK_RPM` 4 for Flash). A burst of feedback rounds then queues calls for a
-few seconds instead of collecting 429s, retries and fallbacks. The limit is per worker
+15 RPM; `LLM_FALLBACK_RPM` 14 for the Flash-Lite fallback). A burst of feedback rounds then
+queues calls for a few seconds instead of collecting 429s, retries and fallbacks. The limit is per worker
 process; several workers would need a shared limiter (Redis) or a paid tier.
 
 ### Token usage is an event
@@ -243,6 +243,11 @@ the dataviz palette validator against each theme's card surface.
 
 ## Deployment
 
+### Keep presentation sources private
+Demo scripts, recordings and editable Excalidraw sources are local presentation materials.
+They are ignored by Git and excluded from Docker build contexts. Public documentation keeps
+the rendered architecture SVG. Cost: a fresh clone does not include the recording pipeline.
+
 ### One Compose file, two modes
 `docker compose up -d` starts Postgres and Temporal for development (API, worker and UI run
 on the host with reloads). `--profile app` adds a one-shot `migrate` service (migrations +
@@ -273,9 +278,22 @@ and why:
 | `react-markdown` + `remark-gfm` | Renders the streamed report safely (no raw HTML), with tables |
 | `tailwindcss` | Styling with theme tokens as CSS variables, so light and dark themes share one set of classes |
 | `vitest` | Unit tests for the event reducer without a browser |
-| `playwright-core` (demo only) | Drives the system Chrome to record the demo video; not used by the app |
 
 ## Testing
+
+### Release checks run without an LLM key
+GitHub Actions runs the backend tests against a seeded Postgres service and Temporal's
+time-skipping server, plus lint, formatting, frontend tests, type checks and a production
+build. Live sample checks stay manual because they spend quota and depend on model output.
+Cost: CI needs network access for dependencies, the Temporal test server and Google Fonts.
+
+### Patch production dependencies while keeping Next.js 15
+The final dependency audit found advisories in Next.js 15.5.4 and its dependencies. Next.js
+and its ESLint config move together to 15.5.28; a scoped override supplies patched PostCSS
+8.5.x instead of Next's pinned 8.4.31. Vitest moves to 4.1.12 to clear test-tool advisories.
+Cost: the PostCSS override must be revisited when Next.js updates its dependency; remaining
+moderate minimatch advisories are in lint tooling and tracked in PROGRESS.md.
+
 - Unit tests for search, stats and company picking (seeded DB).
 - Workflow tests on Temporal's time-skipping server with fake activities: answers and
   double clicks, pause/resume, answers while paused, failure then retry, feedback queued
