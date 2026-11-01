@@ -1,8 +1,14 @@
 """The company-check agent as a LangGraph state machine.
 
-    resolve ──▶ gather ──▶ analyst ⇄ tools ──▶ report ──▶ END
-       ▲  │
-       └──┘ (asks for a better name when nothing matches)
+    START ─┬─▶ resolve ──▶ gather ──▶ analyst ⇄ tools ──▶ report ──▶ finish_round ──▶ END
+           │     ▲  │         ▲                  │  │                       ▲
+           │     └──┘         └── switch_company ┘  └── nothing to rewrite ──┘
+           └─▶ feedback_intake ──▶ analyst … (feedback round)
+                     └──▶ END (same feedback as last time: nothing to do)
+
+- The first run checks the company. Each later run handles one piece of reviewer feedback:
+  the analyst patches findings and charts with feedback tools, and the report is rewritten
+  only if something it depends on changed.
 
 - resolve / gather are deterministic code: they call the data tools directly (cheap, reliable).
 - analyst is one LLM call per node run; tools executes its tool calls in a separate node.
@@ -11,18 +17,21 @@
 - Every node streams progress through the injected EventSink.
 """
 
+import re
 from datetime import date
 from typing import Any
 
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
+    RemoveMessage,
     SystemMessage,
     ToolMessage,
     message_chunk_to_message,
 )
 from langgraph.config import get_config
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 
@@ -31,12 +40,15 @@ from company_check.agent.llm import chat_model
 from company_check.agent.prompts import (
     ANALYST_SYSTEM,
     CONTINUE_REPORT,
+    FEEDBACK_SYSTEM,
     REPORT_SYSTEM,
+    REVISE_REPORT,
     dossier,
     report_input,
+    round_context,
 )
 from company_check.agent.state import AgentContext, CheckState
-from company_check.agent.toolbox import ANALYST_TOOLS, Turn, run_call
+from company_check.agent.toolbox import CHECK_TOOLS, FEEDBACK_TOOLS, Turn, run_call
 from company_check.db import SessionLocal
 
 # Guard against an analyst that never calls submit_findings.
@@ -136,10 +148,33 @@ def after_resolve(state: CheckState) -> str:
 # --- gather ------------------------------------------------------------------
 
 
+# Everything derived from one company; cleared when the check restarts for another.
+FRESH_CHECK = {
+    "extra_news": [],
+    "excluded_ids": [],
+    "concerns": [],
+    "open_questions": [],
+    "recommendation": {},
+    "findings_ready": False,
+    "report": "",
+    "charts": {},
+    "reviewer_notes": [],
+    "report_style": [],
+    "analyst_turns": 0,
+    "mode": "check",
+    "switch_to": None,
+}
+
+
 async def gather(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     sink = runtime.context.sink
-    company_id = state["company"]["id"]
     key = f"gather:{_step()}"
+    reset: dict[str, Any] = {}
+    if state.get("switch_to"):  # the reviewer meant another company: start over for it
+        company_id = state["switch_to"]
+        reset = dict(FRESH_CHECK)
+    else:
+        company_id = state["company"]["id"]
     async with SessionLocal() as s:
         results: dict[str, Any] = {}
         for name, fn in (
@@ -169,13 +204,26 @@ async def gather(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str,
                 key=f"{key}:{name}:end",
             )
 
+    if reset:
+        await sink.emit(
+            "company_selected",
+            {"company_id": company_id, "name": results["get_company"]["name"]},
+            key=f"{key}:selected",
+        )
     update = {
+        **reset,
         "company": results["get_company"],
         "reviews": results["get_reviews"],
         "news": results["get_news"],
         "as_of": state.get("as_of") or date.today().isoformat(),
     }
-    return {**update, "messages": [HumanMessage(dossier({**state, **update}))]}
+    return {
+        **update,
+        "messages": [
+            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+            HumanMessage(dossier({**state, **update})),
+        ],
+    }
 
 
 # --- analyst ⇄ tools ---------------------------------------------------------
@@ -188,8 +236,10 @@ async def analyst(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str
 
     sink = runtime.context.sink
     message_id = f"analyst:{_step()}"
-    llm = chat_model(tools=ANALYST_TOOLS)
-    prompt = [SystemMessage(ANALYST_SYSTEM.format(as_of=state["as_of"])), *state["messages"]]
+    feedback_round = state.get("mode") == "feedback"
+    llm = chat_model(tools=FEEDBACK_TOOLS if feedback_round else CHECK_TOOLS)
+    system = FEEDBACK_SYSTEM if feedback_round else ANALYST_SYSTEM
+    prompt = [SystemMessage(system.format(as_of=state["as_of"])), *state["messages"]]
 
     agg = None
     wrote = False
@@ -216,6 +266,8 @@ async def tools(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, 
     last = state["messages"][-1]
     assert isinstance(last, AIMessage)
     if not last.tool_calls:
+        if state.get("mode") == "feedback":
+            return {}  # a plain reply ends the feedback round
         return {
             "messages": [
                 HumanMessage(
@@ -238,6 +290,13 @@ async def tools(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, 
 
 
 def after_tools(state: CheckState) -> str:
+    if state.get("switch_to"):
+        return "gather"
+    if state.get("mode") == "feedback":
+        last = state["messages"][-1]
+        if isinstance(last, AIMessage) and not last.tool_calls:
+            return "report" if state.get("report_dirty") else "finish_round"
+        return "analyst"
     return "report" if state.get("findings_ready") else "analyst"
 
 
@@ -256,13 +315,44 @@ async def report(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str,
             SystemMessage(REPORT_SYSTEM.format(as_of=state["as_of"])),
             HumanMessage(report_input(state)),
         ]
+        if state.get("mode") == "feedback" and state.get("report"):
+            # Revise the report the reviewer has read rather than writing a new one.
+            prompt.append(
+                HumanMessage(
+                    REVISE_REPORT.format(
+                        previous=state["report"],
+                        changes="; ".join(state.get("round_changes", [])) or "nothing",
+                        instructions=_style_instructions(state),
+                    )
+                )
+            )
         if prior:
             prompt.append(HumanMessage(CONTINUE_REPORT.format(prior=prior)))
         prior = await _stream_continuation(sink, message_id, chat_model(), prompt, prior)
         await sink.end_message(message_id, kind="report")
 
-    await sink.emit("report", {"message_id": message_id, "markdown": prior}, key=message_id)
+    await sink.emit(
+        "report",
+        {"message_id": message_id, "markdown": prior, "previous": state.get("report") or None},
+        key=message_id,
+    )
     return {"report": prior}
+
+
+def _style_instructions(state: CheckState) -> str:
+    """The reviewer's wording requests: this round's, plus earlier ones that must survive
+    the rewrite (a later rewrite must not undo "put the recommendation in bold")."""
+    new = state.get("report_instructions", [])
+    earlier = [i for i in state.get("report_style", []) if i not in new]
+    parts = []
+    if new:
+        parts.append("The reviewer now asks: " + " ".join(new))
+    if earlier:
+        parts.append(
+            "Earlier requests from the reviewer that still apply (if two conflict, the later "
+            "one wins):\n" + "\n".join(f"- {i}" for i in earlier)
+        )
+    return "\n".join(parts)
 
 
 async def _stream_continuation(sink, message_id, llm, prompt, prior: str) -> str:
@@ -301,6 +391,105 @@ async def _apply_decision(sink, message_id, prior: str, held: str) -> tuple[str,
     return held[drop:], prior, True
 
 
+# --- feedback rounds -----------------------------------------------------------
+
+
+def route_start(state: CheckState) -> str:
+    return "feedback_intake" if state.get("feedback") else "resolve"
+
+
+def _norm(feedback: dict[str, Any]) -> str:
+    text = re.sub(r"[^a-z0-9_ ]+", " ", feedback["text"].lower())
+    return f"{feedback.get('target') or ''}|{' '.join(text.split())}"
+
+
+def _already_applied(state: CheckState, norm: str) -> bool:
+    """True when repeating this feedback cannot change anything:
+    - it is the same as the last applied feedback (nothing has changed since), or
+    - an earlier identical feedback only excluded evidence, and all of it is still excluded
+      (exclusions are never undone, so later rounds cannot have reversed it)."""
+    applied = [f for f in state.get("feedback_log", []) if f.get("outcome") == "applied"]
+    if applied and applied[-1]["norm"] == norm:
+        return True
+    excluded = set(state.get("excluded_ids", []))
+    return any(
+        f["norm"] == norm
+        and f.get("ops") == ["exclude_evidence"]
+        and f.get("excluded")
+        and set(f["excluded"]) <= excluded
+        for f in applied
+    )
+
+
+async def feedback_intake(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
+    """Start a feedback round with a fresh, compact context (dossier + current findings +
+    feedback log) instead of the whole transcript, so long sessions stay cheap.
+
+    Feedback identical to the last applied feedback is a no-op: everything it asked for is
+    already in place, so no LLM call is made."""
+    fb = state["feedback"]
+    norm = _norm(fb)
+    if _already_applied(state, norm):
+        result = {
+            "feedback_id": fb["id"],
+            "outcome": "duplicate",
+            "changes": [],
+            "message": "Same as your previous feedback, which is already applied. Nothing changed.",
+        }
+        await runtime.context.sink.emit(
+            "feedback_result", result, key=f"feedback:{fb['id']}:result"
+        )
+        entry = {"id": fb["id"], "text": fb["text"], "norm": norm, "outcome": "duplicate"}
+        return {"feedback_log": [*state.get("feedback_log", []), entry]}
+    return {
+        "mode": "feedback",
+        "analyst_turns": 0,
+        "round_changes": [],
+        "round_ops": [],
+        "round_excluded": [],
+        "report_dirty": False,
+        "report_instructions": [],
+        "messages": [
+            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+            HumanMessage(dossier(state)),
+            HumanMessage(round_context(state, fb)),
+        ],
+    }
+
+
+def after_intake(state: CheckState) -> str:
+    log = state.get("feedback_log", [])
+    return END if log and log[-1]["id"] == state["feedback"]["id"] else "analyst"
+
+
+async def finish_round(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
+    fb = state.get("feedback")
+    log = state.get("feedback_log", [])
+    if not fb or any(f["id"] == fb["id"] for f in log):
+        return {}  # the first check, not a feedback round
+    changes = state.get("round_changes", [])
+    await runtime.context.sink.emit(
+        "feedback_result",
+        {"feedback_id": fb["id"], "outcome": "applied", "changes": changes},
+        key=f"feedback:{fb['id']}:result",
+    )
+    entry = {
+        "id": fb["id"],
+        "text": fb["text"],
+        "norm": _norm(fb),
+        "outcome": "applied",
+        "changes": changes,
+        "ops": sorted(set(state.get("round_ops", []))),
+        "excluded": state.get("round_excluded", []),
+    }
+    return {
+        "feedback_log": [*log, entry],
+        "round_changes": [],
+        "report_dirty": False,
+        "report_instructions": [],
+    }
+
+
 # --- graph -------------------------------------------------------------------
 
 
@@ -311,10 +500,14 @@ def build_graph(checkpointer=None):
     g.add_node("analyst", analyst)
     g.add_node("tools", tools)
     g.add_node("report", report)
-    g.add_edge(START, "resolve")
+    g.add_node("feedback_intake", feedback_intake)
+    g.add_node("finish_round", finish_round)
+    g.add_conditional_edges(START, route_start, ["resolve", "feedback_intake"])
+    g.add_conditional_edges("feedback_intake", after_intake, ["analyst", END])
     g.add_conditional_edges("resolve", after_resolve, ["resolve", "gather"])
     g.add_edge("gather", "analyst")
     g.add_conditional_edges("analyst", after_analyst, ["tools"])
-    g.add_conditional_edges("tools", after_tools, ["analyst", "report"])
-    g.add_edge("report", END)
+    g.add_conditional_edges("tools", after_tools, ["analyst", "report", "gather", "finish_round"])
+    g.add_edge("report", "finish_round")
+    g.add_edge("finish_round", END)
     return g.compile(checkpointer=checkpointer)

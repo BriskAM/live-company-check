@@ -31,8 +31,22 @@ class CheckState(TypedDict, total=False):
     recommendation: dict[str, Any]
     findings_ready: bool  # submit_findings accepted → write the report
     report: str
-    # chart_id -> {"tool", "title", "params", "version"}; data is rebuilt from state on demand
+    # chart_id -> {"tool", "title", "params", "version", "digest"}; data is rebuilt from state
     charts: dict[str, dict[str, Any]]
+    chart_seq: int  # last chart number handed out (ids stay unique across company switches)
+    reviewer_notes: list[str]  # questions asked and the reviewer's answers
+
+    # --- feedback rounds ---
+    mode: Literal["check", "feedback"]
+    feedback: dict[str, Any] | None  # the feedback being handled: {"id", "text", "target"}
+    feedback_log: list[dict[str, Any]]  # handled feedback: id, text, norm, outcome, changes
+    round_changes: list[str]  # what this round changed, reported back to the reviewer
+    round_ops: list[str]  # tools that succeeded this round
+    round_excluded: list[str]  # evidence excluded this round
+    report_dirty: bool  # findings, evidence or wording changed → rewrite the report
+    report_instructions: list[str]  # reviewer's wording requests for the next rewrite
+    report_style: list[str]  # every wording request so far; all keep applying to rewrites
+    switch_to: str | None  # company id to restart the check for
 
 
 @dataclass
@@ -138,3 +152,52 @@ class TableCompareCompanies(BaseModel):
     chart_id: str | None = Field(default=None, description="Existing table to update")
     title: str | None = None
     company_ids: list[str] | None = None
+
+
+# --- feedback tools ---------------------------------------------------------------
+
+
+class ExcludeEvidence(BaseModel):
+    """Leave evidence items out of the check (e.g. they are about a different company).
+    Concerns relying only on them are removed, the ids are taken off other concerns, and
+    charts are redrawn without them."""
+
+    evidence_ids: list[str]
+    reason: str = Field(description="Short reason, shown to the reviewer")
+
+
+class ConcernPatch(BaseModel):
+    id: str | None = Field(default=None, description="Existing concern id to replace; omit to add")
+    title: str
+    detail: str
+    severity: Literal["low", "medium", "high"]
+    evidence_ids: list[str]
+
+
+class UpdateFindings(BaseModel):
+    """Change the findings. Only the concerns you name change; all others stay as they are."""
+
+    remove_concern_ids: list[str] = Field(default_factory=list)
+    upsert_concerns: list[ConcernPatch] = Field(
+        default_factory=list, description="Concerns to add (no id) or replace (with id)"
+    )
+    open_questions: list[str] | None = Field(default=None, description="Replaces the list")
+    recommendation: (
+        Literal["proceed", "proceed_with_caution", "do_not_proceed", "needs_more_info"] | None
+    ) = None
+    recommendation_reason: str | None = None
+
+
+class ReviseReport(BaseModel):
+    """Rewrite the report following the reviewer's wording or structure request (no change to
+    the findings themselves)."""
+
+    instructions: str
+
+
+class SwitchCompany(BaseModel):
+    """Restart the whole check for a different company (e.g. the reviewer meant another one of
+    the similar names). Use the company id from the similar-names list."""
+
+    company_id: str
+    reason: str
