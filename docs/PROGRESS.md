@@ -8,7 +8,7 @@
 | M1 | Data tools + LangGraph agent, CLI runner | ✅ done |
 | M2 | Temporal workflow, event log, SSE, live UI | ✅ done |
 | M3 | Questions (single / multi / text), idempotent answers | ✅ done (with M2) |
-| M4 | Pause mid-writing, restart survival, long pauses | 🚧 in progress |
+| M4 | Pause mid-writing, restart survival, long pauses | ✅ done |
 | M5 | Visualization tools + chart feedback | ⏳ |
 | M6 | Feedback rounds with selective recompute | ⏳ |
 | M7 | Failure polish, README, architecture diagram, demo | ⏳ |
@@ -20,7 +20,7 @@
 | 1 Brightline | Single-choice lookalike question ✅. Monthly chart (M5), switch to Inc (M6) pending |
 | 2 Northwind | Agent already excludes the clinic articles on its own ✅. Feedback flow (M6) pending |
 | 3 Pinecrest | Rating drop found ✅. Charts (M5) pending |
-| 4 Copperleaf | Leafline data exposure found ✅. Pause mid-output + restart (M4) in progress |
+| 4 Copperleaf | Leafline data exposure found ✅. Pause mid-report + resume continues the text ✅. Worker/API restart ✅. Long pause across Temporal restart ✅ |
 | 5 Harborview | Multi-choice → free-text → focused findings ✅. Feedback rounds (M6) pending |
 
 ## Bugs found and fixed
@@ -46,14 +46,28 @@
    itself. Permanent LLM errors (401/402/403, invalid key) now fail fast as non-retryable;
    the check shows the error and waits for Retry. 429/503/timeouts still retry.
 
+## Verified scenarios (live, Gemini)
+
+| Scenario | Result |
+|---|---|
+| Pause 159 chars into the report, resume | Report continued mid-sentence; no repeat (`scripts/pause_mid_report.py`) |
+| `kill -9` worker 1 s into the report + restart API | Retried activity continued the text after ~14 s; visible text == final report (`scripts/verify_stream.py`) |
+| Pause while waiting for an answer, restart Temporal + worker + API, answer while paused, resume | Question and pause survived; answer applied; completed |
+| Check failed with 402, then Retry after fixing the key | Resumed from checkpoint and completed |
+| 8 h pause | Workflow test on the time-skipping server |
+
 ## Observations / open issues
 
 - **Free-tier rate limits (429) on 3.5 Flash** were hit on 2026-11-01 after ~30 calls in a
   short window; the Flash-Lite fallback handled every one. A paid key is being arranged.
 - **Second API key (2026-11-01) is on a prepaid project with no credit** → every model
-  returns 402. Needs credit added in AI Studio before live LLM testing can continue.
-- **Gemini streams in large chunks** (a 300-word report arrives in ~7 chunks within ~2 s), so
-  the "mid-writing" window for pause is short. Addressed in M4.
+  returns 402. Back on the free key; primary model switched to **3.5 Flash-Lite** (lasts
+  longer on free quota), falling back to 3.5 Flash.
+- **Gemini streams in large chunks** (~150–250 chars per chunk), so the "mid-writing" window
+  is a couple of seconds. The longer report (Customer reviews section) widens it.
+- Analyst messages (1–3 sentences before tool calls) are restarted, not continued, after an
+  interruption — continuing a half-written tool-calling turn is not reliable. Only the
+  report, which is the long text, is continued.
 - On resume after a question, the graph re-emits the step's events; idempotency keys drop
   them in the DB, the console runner still prints them (expected).
 - The worker and API run on the host during development; Compose only runs Postgres and

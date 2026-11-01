@@ -78,6 +78,16 @@ consistent with the log.
 The first delta of a message in a new attempt emits `message_start`; the UI clears any text
 it had for that id. A retried step therefore replaces, not duplicates, partial output.
 
+### Interrupted reports are continued, not rewritten
+After a pause or a crash the report step reads back what was already streamed for its
+message id and asks the model to continue from exactly there. The first ~160 characters of
+the continuation are held back and checked: a repeated tail is trimmed; a restart from the
+top resets the message (`message_start`) so the reviewer never sees text twice. A message
+that already finished is reused without an LLM call.
+
+**Trade-off:** a seam can read slightly less smoothly than one uninterrupted generation,
+and only the report gets this treatment (analyst notes are short and restarted).
+
 ### SSE with LISTEN/NOTIFY, one connection per stream
 LISTEN starts before the replay query so nothing committed in between is missed. A 5 s
 timeout re-polls as a safety net. **Trade-off:** one Postgres connection per open check
@@ -106,12 +116,18 @@ arriving before the activity has stopped is not mistaken for an error.
 
 ## LLM
 
-### Gemini 3.5 Flash, falling back to 3.5 Flash-Lite
-Chosen by probing the key (2026-11-01): 2.5 models are unavailable to new keys, pro models
+### Gemini 3.5 Flash-Lite, falling back to 3.5 Flash
+Flash-Lite is primary because it stretches the free-tier quota further and is faster; Flash
+is the fallback (separate quota). Candidates were probed on 2026-11-01: 2.5 models are unavailable to new keys, pro models
 have zero free-tier quota, and 3.6–3.8 Flash often returned 503. Fallback triggers on any
 error before the first streamed chunk, so one message never mixes models.
 
 All models are created in `agent/llm.py`; switching provider is a change to that file.
+
+### Permanent LLM errors fail fast
+401/402/403 and invalid-key errors are raised as non-retryable, so the check goes straight
+to `error` with the message and waits for the reviewer's Retry. Overloads (503), rate limits
+(429) and timeouts keep the normal retry policy with backoff.
 
 ### Validation instead of trust
 `submit_findings` rejects unknown or excluded evidence ids, and malformed tool calls are

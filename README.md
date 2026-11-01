@@ -32,6 +32,17 @@ npm run dev                     # http://localhost:3000
 
 Health check: `curl localhost:8000/health` → `{"database":"ok","temporal":"ok"}`.
 
+## Scenario scripts
+
+With the API and worker running:
+
+```bash
+cd backend
+uv run python scripts/pause_mid_report.py "Copperleaf Software"   # pause mid-report, resume, check the seam
+uv run python scripts/verify_stream.py <check_id>                 # visible text == final report?
+uv run python -m company_check.cli "Brightline Logistics"         # run the agent in the terminal
+```
+
 ## Repository layout
 
 ```

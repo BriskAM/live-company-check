@@ -166,3 +166,23 @@ async def test_failure_waits_for_retry(env):
     assert fakes.statuses() == ["running", "error", "running", "completed"]
     error = next(e for e in fakes.events if e.payload.get("status") == "error")
     assert "garbage" in error.payload["message"]
+
+
+async def test_survives_a_pause_of_many_hours(env):
+    async def script(n, inp):
+        if "q1" not in inp.answers:
+            return RunAgentResult(status="waiting", questions=[QUESTION])
+        return RunAgentResult(status="done")
+
+    fakes = Fakes(script)
+    worker, handle = await _start(env, fakes)
+    async with worker:
+        await _wait_status(handle, "waiting_for_input")
+        await handle.signal(CheckWorkflow.pause, ControlSignal(str(uuid.uuid4())))
+        await _wait_status(handle, "paused")
+        await env.sleep(timedelta(hours=8))  # time-skipping: no timeouts fire while paused
+        await handle.signal(CheckWorkflow.answer, AnswerSignal(str(uuid.uuid4()), "q1", "a"))
+        await handle.signal(CheckWorkflow.resume, ControlSignal(str(uuid.uuid4())))
+        await handle.result()
+
+    assert fakes.statuses()[-1] == "completed"
