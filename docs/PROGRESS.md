@@ -4,24 +4,26 @@
 
 | # | Milestone | Status |
 |---|---|---|
-| M0 | Skeleton: Docker Compose (Postgres, Temporal), FastAPI, worker, Next.js, migrations, seed | ✅ done |
-| M1 | Data tools + LangGraph agent, CLI runner | ✅ done |
-| M2 | Temporal workflow, event log, SSE, live UI | ✅ done |
-| M3 | Questions (single / multi / text), idempotent answers | ✅ done (with M2) |
-| M4 | Pause mid-writing, restart survival, long pauses | ✅ done |
-| M5 | Visualization tools (4), inline charts/tables, update-by-id | ✅ done |
-| M6 | Feedback rounds: queue, patch tools, selective recompute, repeat dedupe, continue-as-new | ✅ done |
-| M7 | Failure polish, README, architecture diagram, demo | ⏳ |
+| M0 | Skeleton: Docker Compose (Postgres, Temporal), FastAPI, worker, Next.js, migrations, seed | Done |
+| M1 | Data tools + LangGraph agent, CLI runner | Done |
+| M2 | Temporal workflow, event log, SSE, live UI | Done |
+| M3 | Questions (single / multi / text), idempotent answers | Done (with M2) |
+| M4 | Pause mid-writing, restart survival, long pauses | Done |
+| M5 | Visualization tools (4), inline charts/tables, update-by-id | Done |
+| M6 | Feedback rounds: queue, patch tools, selective recompute, repeat dedupe, continue-as-new | Done |
+| M7 | Failure polish, full Compose stack, README, architecture diagrams | Done |
+| M8 | Frontend polish | Planned |
+| Demo | Deck / video | On hold |
 
 ## Sample checks status
 
 | Check | Status |
 |---|---|
-| 1 Brightline | Single-choice lookalike question ✅. "I meant the Inc one" restarts the check for cmp_002 ✅ |
-| 2 Northwind | Agent already ignores the clinic articles ✅. Exclusion feedback applied, report left alone (nothing it reads changed) ✅. Timeline on request ✅. Same feedback twice → both no-ops, no LLM call for the repeat ✅ |
-| 3 Pinecrest | Rating drop charted unprompted with the sale marked, plus a before/after table ✅. "Last 12 months", remove marker, "mark the sale date" each update chart-1 in place, range kept ✅. Table split into three periods from the UI ✅ |
-| 4 Copperleaf | Leafline data exposure found ✅. Pause mid-report + resume continues the text ✅. Worker/API restart ✅. Long pause across Temporal restart ✅ |
-| 5 Harborview | Multi-choice → free-text → focused findings ✅. Long session tested on Pinecrest: 13 report rounds, 10 sent in one burst (queued, handled in order), continued-as-new after 8 rounds ✅ |
+| 1 Brightline | Single-choice lookalike question. "I meant the Inc one" restarts the check for cmp_002 |
+| 2 Northwind | Agent already ignores the clinic articles. Exclusion feedback applied, report left alone (nothing it reads changed). Timeline on request. Same feedback twice → both no-ops, no LLM call for the repeat |
+| 3 Pinecrest | Rating drop charted unprompted with the sale marked, plus a before/after table. "Last 12 months", remove marker, "mark the sale date" each update chart-1 in place, range kept. Table split into three periods from the UI |
+| 4 Copperleaf | Leafline data exposure found. Pause mid-report + resume continues the text. Worker/API restart. Long pause across Temporal restart |
+| 5 Harborview | Multi-choice → free-text → focused findings. Long session tested on Pinecrest: 13 report rounds, 10 sent in one burst (queued, handled in order), continued-as-new after 8 rounds |
 
 ## Bugs found and fixed
 
@@ -58,6 +60,14 @@
     call). A repeat is now also a no-op when the earlier identical feedback only excluded
     evidence and all of it is still excluded.
 13. **A chart "update" that changed nothing created a new version.** Now skipped.
+14. **Errors showed raw exception text** (long Gemini payloads). Errors are now mapped to a
+    plain message (rate limit, overload, key/billing, timeout) with the raw text, shortened,
+    behind "Details".
+15. **Hitting the analyst turn limit was retried 4 times**, failing the same way each time.
+    At the limit the analyst is now made to finish (only `submit_findings` offered, or a
+    plain reply in a feedback round); if it still can't, the error is not retried.
+16. **`docker stop` would kill the worker abruptly** (SIGTERM wasn't handled). The worker
+    now shuts down gracefully, giving running agents 5 s.
 
 ## Verified scenarios (live, Gemini)
 
@@ -69,6 +79,9 @@
 | Check failed with 402, then Retry after fixing the key | Resumed from checkpoint and completed |
 | 8 h pause | Workflow test on the time-skipping server |
 | Feedback rounds (Northwind, Pinecrest, Brightline) | See sample checks table; driven with `scripts/feedback.py` and from the UI |
+| SIGTERM to the worker while the report streams | Graceful shutdown let the run finish; visible report == final report |
+| `kill -9` of the worker in a feedback round | "Recovering from a temporary problem (attempt 2)" shown; round and the queued next one completed |
+| Full stack via `docker compose --profile app up` | Migrate + seed, check + feedback round, UI all from containers |
 | 10 feedback messages in one burst | Queued, handled one by one, workflow continued as new after 8 rounds; dedupe of old command ids survives it (workflow test) |
 
 ## Observations / open issues
@@ -90,8 +103,8 @@
   the change-point statistic and the period table split at slightly different dates.
 - On resume after a question, the graph re-emits the step's events; idempotency keys drop
   them in the DB, the console runner still prints them (expected).
-- The worker and API run on the host during development; Compose only runs Postgres and
-  Temporal. Full Compose stack is planned for M7.
+- `docker compose up -d` still starts only Postgres and Temporal (for development on the
+  host); the full stack is behind the `app` profile.
 
 ## Environment notes
 - Postgres on host port 5433, Temporal on 7233 (UI 8233), API 8000, UI 3000.
