@@ -20,6 +20,7 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -111,6 +112,9 @@ class Check(Base):
     # running | waiting_for_input | paused | idle | error | ... (mirrors the workflow)
     status: Mapped[str] = mapped_column(String, nullable=False, default="running")
     cost_usd: Mapped[float] = mapped_column(default=0.0)
+    # Last event seq handed out for this check. Incremented under a row lock, so events are
+    # numbered gap-free and in commit order even with concurrent writers.
+    last_seq: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -134,8 +138,20 @@ class CheckEvent(Base):
     seq: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     type: Mapped[str] = mapped_column(String, nullable=False)
     payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    # Optional idempotency key: an event re-emitted by a retried step is stored only once.
+    key: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index(
+            "ux_check_events_key",
+            "check_id",
+            "key",
+            unique=True,
+            postgresql_where=text("key IS NOT NULL"),
+        ),
     )
 
 
