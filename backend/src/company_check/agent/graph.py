@@ -48,11 +48,20 @@ from company_check.agent.prompts import (
     round_context,
 )
 from company_check.agent.state import AgentContext, CheckState
-from company_check.agent.toolbox import CHECK_TOOLS, FEEDBACK_TOOLS, Turn, run_call
+from company_check.agent.toolbox import CHECK_TOOLS, FEEDBACK_TOOLS, FINISH_TOOLS, Turn, run_call
 from company_check.db import SessionLocal
 
-# Guard against an analyst that never calls submit_findings.
+# Guard against an analyst that never finishes: after MAX_ANALYST_TURNS it must finish
+# (only submit_findings is offered, or no tools in a feedback round); if it still doesn't
+# within FINAL_TURNS, the run fails.
 MAX_ANALYST_TURNS = 8
+FINAL_TURNS = 2
+
+
+class AgentGaveUp(RuntimeError):
+    """The analyst could not finish. Retrying the same step would fail the same way."""
+
+
 # Top candidate is picked without asking when it beats the runner-up by this much.
 CLEAR_WINNER_MARGIN = 0.25
 
@@ -231,15 +240,24 @@ async def gather(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str,
 
 async def analyst(state: CheckState, runtime: Runtime[AgentContext]) -> dict[str, Any]:
     turns = state.get("analyst_turns", 0)
-    if turns >= MAX_ANALYST_TURNS:
-        raise RuntimeError("analyst did not submit findings within the turn limit")
+    if turns >= MAX_ANALYST_TURNS + FINAL_TURNS:
+        raise AgentGaveUp(f"the agent could not finish within {turns} turns")
 
     sink = runtime.context.sink
     message_id = f"analyst:{_step()}"
     feedback_round = state.get("mode") == "feedback"
-    llm = chat_model(tools=FEEDBACK_TOOLS if feedback_round else CHECK_TOOLS)
     system = FEEDBACK_SYSTEM if feedback_round else ANALYST_SYSTEM
     prompt = [SystemMessage(system.format(as_of=state["as_of"])), *state["messages"]]
+    if turns < MAX_ANALYST_TURNS:
+        llm = chat_model(tools=FEEDBACK_TOOLS if feedback_round else CHECK_TOOLS)
+    elif feedback_round:
+        llm = chat_model()
+        prompt.append(HumanMessage("Stop using tools. Reply to the reviewer now."))
+    else:
+        llm = chat_model(tools=FINISH_TOOLS, tool_choice="any")
+        prompt.append(
+            HumanMessage("Time is up: call submit_findings now with what you have found.")
+        )
 
     agg = None
     wrote = False

@@ -5,6 +5,7 @@ uv run python -m company_check.worker.main
 
 import asyncio
 import logging
+import signal
 from datetime import timedelta
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -35,10 +36,19 @@ async def main() -> None:
         # second so pausing stops the agent within ~1s.
         max_heartbeat_throttle_interval=timedelta(seconds=1),
         default_heartbeat_throttle_interval=timedelta(seconds=1),
+        # On shutdown, running agents are cancelled: they save the text streamed so far and
+        # Temporal retries them on the next worker, which continues from the checkpoint.
+        graceful_shutdown_timeout=timedelta(seconds=5),
     )
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):  # docker stop sends SIGTERM
+        loop.add_signal_handler(sig, stop.set)
     log.info("worker listening on task queue %r", settings.temporal_task_queue)
     try:
-        await worker.run()
+        async with worker:
+            await stop.wait()
+            log.info("shutting down")
     finally:
         await close_pool()
 

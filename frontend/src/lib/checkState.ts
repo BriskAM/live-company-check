@@ -108,6 +108,7 @@ export type CheckView = {
   lastSeq: number;
   status: string;
   error?: string;
+  errorDetail?: string;
   items: Item[];
   tools: Record<string, Tool>;
   messages: Record<string, Message>;
@@ -147,6 +148,7 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       const wasPaused = view.status === "paused";
       v.status = p.status;
       v.error = p.status === "error" ? p.message : undefined;
+      v.errorDetail = p.status === "error" ? p.detail : undefined;
       const marker = STATUS_MARKERS[p.status];
       if (marker) v.items = [...v.items, { kind: "marker", seq: e.seq, ...marker }];
       else if (wasPaused && p.status !== "paused")
@@ -232,6 +234,9 @@ export function reduce(view: CheckView, e: CheckEvent): CheckView {
       if (f) v.feedback = { ...view.feedback, [p.feedback_id]: { ...f, result: p as Feedback["result"] } };
       break;
     }
+    case "notice":
+      v.items = [...v.items, { kind: "marker", seq: e.seq, text: p.text, tone: "warn" }];
+      break;
     case "evidence_excluded":
       v.items = [...v.items, { kind: "excluded", seq: e.seq, ids: p.ids, reason: p.reason }];
       break;

@@ -31,6 +31,7 @@ from temporalio.exceptions import ActivityError
 
 with workflow.unsafe.imports_passed_through():
     from company_check.worker.activities import emit_event, run_agent
+    from company_check.worker.errors import describe
     from company_check.worker.types import (
         AnswerSignal,
         CheckInput,
@@ -54,6 +55,14 @@ ROUNDS_PER_RUN = 8
 SEEN_COMMANDS_KEPT = 500
 # A completed check with no feedback for this long closes; feedback after that gets a 409.
 IDLE_CLOSE_AFTER = timedelta(days=30)
+
+
+def _failure_text(e: BaseException) -> str:
+    """The innermost failure's type and message (ActivityError wraps the real cause)."""
+    while e.__cause__ is not None or getattr(e, "cause", None) is not None:
+        e = getattr(e, "cause", None) or e.__cause__
+    kind = getattr(e, "type", None) or type(e).__name__
+    return f"{kind}: {e}"
 
 
 @workflow.defn
@@ -220,7 +229,7 @@ class CheckWorkflow:
                     continue  # pause cancelled it; loop waits for resume
                 if isinstance(e, asyncio.CancelledError):
                     raise  # the workflow itself was cancelled
-                await self._set_status("error", message=str(e.cause or e))
+                await self._set_status("error", **describe(_failure_text(e)))
                 await workflow.wait_condition(lambda: self.retry_requested)
                 self.retry_requested = False
                 continue

@@ -25,7 +25,7 @@ def _base_model(name: str) -> BaseChatModel:
     )
 
 
-def chat_model(tools: Sequence[Any] | None = None) -> Runnable:
+def chat_model(tools: Sequence[Any] | None = None, tool_choice: str | None = None) -> Runnable:
     """Primary model, falling back to the secondary on any error (503 overload, 429 quota...).
 
     Fallback only triggers before the first streamed chunk, so a stream is never mixed
@@ -35,7 +35,7 @@ def chat_model(tools: Sequence[Any] | None = None) -> Runnable:
 
     def build(name: str) -> Runnable:
         m = _base_model(name)
-        return m.bind_tools(tools) if tools else m
+        return m.bind_tools(tools, tool_choice=tool_choice) if tools else m
 
     primary = build(s.llm_model)
     if s.llm_fallback_model and s.llm_fallback_model != s.llm_model:

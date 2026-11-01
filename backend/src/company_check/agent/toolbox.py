@@ -451,6 +451,7 @@ def _tool(name: str, schema: type[BaseModel]) -> StructuredTool:
 
 CHECK_TOOLS = [_tool(name, SCHEMAS[name]) for name in CHECK_TOOL_NAMES]
 FEEDBACK_TOOLS = [_tool(name, SCHEMAS[name]) for name in FEEDBACK_TOOL_NAMES]
+FINISH_TOOLS = [_tool("submit_findings", SubmitFindings)]  # offered alone at the turn limit
 
 
 async def run_call(turn: Turn, call: dict[str, Any]) -> str:

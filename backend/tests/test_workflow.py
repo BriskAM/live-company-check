@@ -167,7 +167,8 @@ async def test_failure_waits_for_retry(env):
 
     assert fakes.statuses() == ["running", "error", "running", "completed"]
     error = next(e for e in fakes.events if e.payload.get("status") == "error")
-    assert "garbage" in error.payload["message"]
+    assert "garbage" in error.payload["detail"]
+    assert error.payload["message"].startswith("The agent hit an unexpected error")
 
 
 async def test_survives_a_pause_of_many_hours(env):

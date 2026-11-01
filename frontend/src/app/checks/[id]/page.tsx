@@ -106,7 +106,17 @@ export default function CheckPage({ params }: { params: Promise<{ id: string }> 
           </div>
         </div>
         {controlError && <p className="mt-2 text-xs text-red-600">{controlError}</p>}
-        {view.error && <p className="mt-2 text-xs text-red-600">{view.error}</p>}
+        {view.error && (
+          <div className="mt-2 text-xs text-red-600">
+            {view.error}
+            {view.errorDetail && (
+              <details className="mt-1 text-zinc-500">
+                <summary className="cursor-pointer">Details</summary>
+                <code className="break-all">{view.errorDetail}</code>
+              </details>
+            )}
+          </div>
+        )}
       </header>
 
       {view.items.length === 0 ? (

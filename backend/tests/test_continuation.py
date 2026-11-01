@@ -34,3 +34,13 @@ def test_permanent_llm_errors_are_not_retried():
     assert _is_permanent(Exception("400 API_KEY_INVALID"))
     assert not _is_permanent(Exception("429 RESOURCE_EXHAUSTED. quota exceeded"))
     assert not _is_permanent(Exception("503 UNAVAILABLE high demand"))
+
+
+def test_errors_are_described_for_the_reviewer():
+    from company_check.worker.errors import describe
+
+    assert "rate limit" in describe("ResourceExhausted: 429 quota exceeded")["message"]
+    assert "API key" in describe("LLMConfigError: 402 credits are depleted")["message"]
+    long = describe("x" * 1000)
+    assert long["message"].startswith("The agent hit an unexpected error")
+    assert len(long["detail"]) == 301

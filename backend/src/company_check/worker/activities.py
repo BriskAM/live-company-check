@@ -9,7 +9,7 @@ from langgraph.types import Command
 from temporalio import activity
 from temporalio.exceptions import ApplicationError
 
-from company_check.agent.graph import build_graph
+from company_check.agent.graph import AgentGaveUp, build_graph
 from company_check.agent.state import AgentContext
 from company_check.event_store import PostgresSink, append_event
 from company_check.pg import get_pool
@@ -84,6 +84,17 @@ async def run_agent(inp: RunAgentInput) -> RunAgentResult:
     sink = PostgresSink(pool, inp.check_id)
 
     hb = asyncio.create_task(_heartbeat())
+    info = activity.info()
+    if info.attempt > 1:
+        # Temporal is retrying after a failure (crash, overload, timeout): tell the reviewer
+        # why it went quiet. A worker that died mid-stream lands here too.
+        await append_event(
+            pool,
+            inp.check_id,
+            "notice",
+            {"text": f"Recovering from a temporary problem (attempt {info.attempt})"},
+            key=f"retry:{info.workflow_run_id}:{info.activity_id}:{info.attempt}",
+        )
     try:
         snapshot = await graph.aget_state(config)
         payload, unanswered = _graph_input(snapshot, inp)
@@ -105,6 +116,8 @@ async def run_agent(inp: RunAgentInput) -> RunAgentResult:
     except Exception as e:
         with contextlib.suppress(Exception):
             await sink.flush()
+        if isinstance(e, AgentGaveUp):
+            raise ApplicationError(str(e), type="AgentGaveUp", non_retryable=True) from e
         if _is_permanent(e):
             # Fail fast: the workflow shows the error and waits for the reviewer to retry
             # (e.g. after fixing the key) instead of burning retries.
