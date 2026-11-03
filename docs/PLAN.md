@@ -1,6 +1,6 @@
 # Implementation Plan — Live Company Check
 
-Target: ~5–7 focused hours. Priority is a small system that is **correct under failure**
+Priority is a small system that is **correct under failure**
 (refresh, restart, double-click, pause mid-stream, LLM errors) over a large feature list.
 
 ## 1. Architecture at a glance

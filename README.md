@@ -3,6 +3,8 @@
 An AI assistant that runs a company due-diligence check together with a human reviewer:
 live streaming, interactive questions, pause/resume, feedback rounds and inline charts.
 
+**Status:** in active development. Latest: a general chart tool the agent uses to draw any line, bar or area chart from the data.
+
 **Stack:** Python 3.12 + FastAPI, LangGraph, Temporal, PostgreSQL, Next.js, Gemini
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): components, agent graph, workflow states, failures
@@ -14,13 +16,13 @@ live streaming, interactive questions, pause/resume, feedback rounds and inline 
 
 ## What it does
 
-| Requirement | How |
+| Feature | How |
 |---|---|
 | Live streaming | Every step is an event in Postgres, streamed over SSE; refresh or reconnect replays the same view |
 | Questions | Single choice (ambiguous name), multiple choice and free text; answered once even on double click |
 | Pause / resume | Pause stops the agent within about a second, mid-sentence if need be; resume continues the text. Survives restarts of the API, worker and Temporal, and pauses of hours |
 | Feedback rounds | Send feedback any time (queued while busy); only work it affects is redone; repeats are no-ops; long sessions continue as new |
-| Visualization | Rating trend, news timeline, ratings by period, company comparison; the agent decides when to use them; each chart appears inline where it was made and is updated in place by feedback ("last 12 months", "mark the sale date") |
+| Visualization | One general chart tool (line, bar or area; week to year; up to four series of ratings, counts or low-rating share, for any company) plus a news timeline and tables; the agent decides what to draw, code computes every number; each chart appears inline where it was made and is updated in place by feedback ("last 12 months", "mark the sale date") |
 | Failures | Retries with backoff, model fallback, plain error messages with Retry, graceful worker shutdown |
 | Going further | Report changes highlighted since the last version; tokens, calls and estimated cost per check in the header |
 

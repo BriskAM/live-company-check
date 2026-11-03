@@ -7,8 +7,8 @@ for the why behind the design and `docs/PROGRESS.md` for history, bugs fixed and
 
 **Live Company Check**: an AI agent that checks a company (records, customer reviews, news)
 while a human reviewer watches live, answers its questions, pauses it and gives feedback.
-A personal project. Stack:
-Python/FastAPI, LangGraph, Temporal, PostgreSQL, Next.js. LLM: Google Gemini (free tier).
+A personal project, still in active development. Stack: Python/FastAPI, LangGraph,
+Temporal, PostgreSQL, Next.js. LLM: Google Gemini (free tier).
 
 ## Ground rules
 
@@ -55,7 +55,7 @@ frontend/src/
   app/checks/[id]/page.tsx check page: header, activity stream (left), case file (right)
   components/              Timeline, CaseFile, ChartBlock, QuestionCard, FeedbackBox, ...
 demo/                      local demo tooling (ignored; keep private)
-private/                   private notes, editable diagram sources (ignored)
+private/                   private notes and editable diagram sources (ignored)
 docs/                      ARCHITECTURE (rendered diagrams), DECISIONS, PROGRESS, PLAN
 ```
 
