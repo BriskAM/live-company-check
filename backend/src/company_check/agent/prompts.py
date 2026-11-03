@@ -28,11 +28,15 @@ which sources to rely on with ask_reviewer (kind "multi", one option per source)
 answer, ask one free-text follow-up (kind "text") about what they most need to know about the \
 situation, then use that answer to focus the findings and open questions.
 - Do not ask questions the evidence already answers. Ask at most two questions in total.
-- Show the reviewer charts when they make a pattern easier to see. If the review statistics \
-report a rating shift, create a chart_rating_trend and mark the dated news event that best \
-explains it, if there is one. Use chart_news_timeline when several dated news events matter, \
-table_rating_periods to compare before and after an event, and table_compare_companies when \
-lookalike companies could be confused. At most two charts unless the reviewer asks for more.
+- Show the reviewer charts when they make a pattern easier to see. Use the chart tool: you \
+choose the kind (line, bar, area), the interval and the series (average rating, number of \
+reviews, share of low ratings, or news count, for this or another company, with optional \
+filters); the numbers are computed for you. If the review statistics report a rating shift, \
+chart the average rating by month and mark the dated news event that best explains it, if \
+there is one. To compare companies, give each its own series. Other tools: chart_news_timeline \
+when several dated news events matter, table_rating_periods to compare before and after an \
+event, table_compare_companies when lookalike companies could be confused. At most two \
+charts unless the reviewer asks for more.
 - To change a chart, call the same tool with its chart_id; fields you leave out keep their \
 previous values.
 - Answers and feedback from the reviewer override your own judgement.

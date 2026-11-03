@@ -18,6 +18,14 @@ class ListSink:
         return [p for t, p, _ in self.events if t == type]
 
 
+RATING_ARGS = {
+    "kind": "line",
+    "interval": "month",
+    "series": [{"source": "reviews", "metric": "avg_rating"}],
+}
+RATING_PARAMS = {**RATING_ARGS, "series": [{**RATING_ARGS["series"][0], "company_id": None}]}
+
+
 def _state():
     return {
         "mode": "feedback",
@@ -64,8 +72,8 @@ def _state():
                 "digest": "old",
             },
             "chart-2": {
-                "tool": "chart_rating_trend",
-                "params": {},
+                "tool": "chart",
+                "params": RATING_PARAMS,
                 "title": "Ratings",
                 "version": 1,
             },
@@ -77,7 +85,7 @@ async def test_exclude_evidence_touches_only_dependent_concerns_and_charts():
     sink = ListSink()
     turn = toolbox.Turn(_state(), sink)
     # Draw chart-2 once so its digest is current; the exclusion doesn't change its data.
-    spec = await toolbox.build_spec(turn.view(), "chart_rating_trend", {})
+    spec = await toolbox.build_spec(turn.view(), "chart", RATING_PARAMS)
     turn.charts["chart-2"]["digest"] = toolbox._digest(spec)
 
     reply = await toolbox.run_call(
@@ -184,7 +192,7 @@ async def test_update_findings_rejects_excluded_evidence():
 
 async def test_new_chart_ids_never_reuse_old_ones():
     turn = toolbox.Turn({**_state(), "charts": {}, "chart_seq": 4}, ListSink())
-    await toolbox.run_call(turn, {"name": "chart_rating_trend", "id": "t4", "args": {}})
+    await toolbox.run_call(turn, {"name": "chart", "id": "t4", "args": RATING_ARGS})
     assert list(turn.charts) == ["chart-5"]
 
 
@@ -239,6 +247,9 @@ def test_repeat_of_an_earlier_exclusion_is_a_no_op_even_after_other_feedback():
     # The exclusion round also tidied concerns: still a no-op to repeat.
     tidy = {**exclude, "ops": ["exclude_evidence", "update_findings"]}
     assert graph._already_applied({**state, "feedback_log": [tidy, chart]}, "|leave out n1")
+    # Or drew a chart alongside it: still a no-op.
+    drew = {**exclude, "ops": ["chart_news_timeline", "exclude_evidence", "update_findings"]}
+    assert graph._already_applied({**state, "feedback_log": [drew, chart]}, "|leave out n1")
     # But not if that round also did something else, like rewriting the report on request.
     mixed = {**exclude, "ops": ["exclude_evidence", "revise_report"]}
     assert not graph._already_applied({**state, "feedback_log": [mixed, chart]}, "|leave out n1")
@@ -247,10 +258,18 @@ def test_repeat_of_an_earlier_exclusion_is_a_no_op_even_after_other_feedback():
 async def test_chart_update_that_changes_nothing_keeps_the_version():
     sink = ListSink()
     turn = toolbox.Turn({**_state(), "charts": {}}, sink)
-    await toolbox.run_call(turn, {"name": "chart_rating_trend", "id": "a", "args": {}})
+    await toolbox.run_call(turn, {"name": "chart", "id": "a", "args": RATING_ARGS})
     reply = await toolbox.run_call(
-        turn, {"name": "chart_rating_trend", "id": "b", "args": {"chart_id": "chart-1"}}
+        turn, {"name": "chart", "id": "b", "args": {**RATING_ARGS, "chart_id": "chart-1"}}
     )
     assert "nothing changed" in reply
     assert turn.charts["chart-1"]["version"] == 1
     assert len(sink.of("chart")) == 1
+
+
+async def test_new_chart_must_state_kind_and_interval():
+    turn = toolbox.Turn({**_state(), "charts": {}}, ListSink())
+    args = {"series": [{"source": "reviews", "metric": "count"}], "kind": "bar"}
+    reply = await toolbox.run_call(turn, {"name": "chart", "id": "a", "args": args})
+    assert reply.startswith("Error: a new chart needs interval")
+    assert turn.charts == {}

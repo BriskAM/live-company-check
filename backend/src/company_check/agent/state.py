@@ -105,11 +105,46 @@ class Marker(BaseModel):
     label: str = Field(description="Short label, e.g. 'Sold to Cobalt'")
 
 
-class ChartRatingTrend(BaseModel):
-    """Line chart of the average customer rating per month (computed from the reviews)."""
+class SeriesQuery(BaseModel):
+    """One line/bar series: a metric over a company's reviews or news, per x-axis bucket."""
+
+    source: Literal["reviews", "news"]
+    metric: Literal["avg_rating", "count", "low_rating_share"] = Field(
+        description="avg_rating: mean star rating; count: how many items; low_rating_share: "
+        "% of the reviews rated 1-2, out of all matching reviews (so do not also filter by "
+        "rating). News can only be counted."
+    )
+    company_id: str | None = Field(
+        default=None, description="Company to chart; omit for the company being checked"
+    )
+    label: str | None = Field(default=None, description="Legend text; a default is made")
+    rating_min: int | None = Field(default=None, description="Only reviews rated at least this")
+    rating_max: int | None = Field(default=None, description="Only reviews rated at most this")
+    contains: str | None = Field(
+        default=None, description="Only items whose text or headline contains this"
+    )
+
+
+class DrawChart(BaseModel):
+    """Line, bar or area chart of one to four series computed from the data. Each series is a
+    metric (average rating, count, share of low ratings) over a company's reviews or news,
+    grouped by week, month, quarter or year. Series can be different companies, sources or
+    filters, but must share one unit (ratings, counts or percents). You choose what to
+    plot; the numbers are computed for you."""
 
     chart_id: str | None = Field(default=None, description="Existing chart to update")
     title: str | None = None
+    kind: Literal["line", "bar", "area"] | None = Field(
+        default=None, description="Required when creating a chart"
+    )
+    interval: Literal["week", "month", "quarter", "year"] | None = Field(
+        default=None,
+        description="X-axis bucket, required when creating a chart. 'per quarter' means "
+        "quarter, 'per month' means month",
+    )
+    series: list[SeriesQuery] | None = Field(
+        default=None, description="Replaces all series when given"
+    )
     last_months: int | None = Field(
         default=None, description="Only the last N complete months (overrides start/end)"
     )

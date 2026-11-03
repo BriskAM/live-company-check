@@ -191,6 +191,13 @@ def pause_mid_report(c: Check, name: str, hold_s: float, after: int = 0) -> None
 # --- the five checks ---------------------------------------------------------------
 
 
+def is_rating_chart(ch: dict) -> bool:
+    """A chart of average rating over time, however the agent set it up."""
+    return ch["tool"] == "chart" and any(
+        m["metric"] == "avg_rating" for m in ch["spec"].get("series", [])
+    )
+
+
 def check_1(case: dict, hold_s: float) -> None:
     name = case["id"]
     c = Check(case["reviewer_input"])
@@ -217,8 +224,8 @@ def check_1(case: dict, hold_s: float) -> None:
     check(
         name,
         "monthly rating chart on request",
-        any(ch["tool"] == "chart_rating_trend" for ch in charts)
-        or any(ch["tool"] == "chart_rating_trend" for ch in of(c.events(), "chart")),
+        any(is_rating_chart(ch) for ch in charts)
+        or any(is_rating_chart(ch) for ch in of(c.events(), "chart")),
     )
 
     after = c.feedback("Actually, I meant the Inc one. Redo the check for that company.")
@@ -279,7 +286,7 @@ def check_3(case: dict, hold_s: float) -> None:
     evs = c.wait_status("completed", what="first report")
     if evs is None:
         return
-    trend = [ch for ch in of(evs, "chart") if ch["tool"] == "chart_rating_trend"]
+    trend = [ch for ch in of(evs, "chart") if is_rating_chart(ch)]
     check(name, "rating drop charted without being asked", bool(trend))
     if not trend:
         return

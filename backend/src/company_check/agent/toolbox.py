@@ -19,7 +19,7 @@ from company_check.agent.events import EventSink
 from company_check.agent.state import (
     AskReviewer,
     ChartNewsTimeline,
-    ChartRatingTrend,
+    DrawChart,
     ExcludeEvidence,
     ReviseReport,
     SearchNews,
@@ -267,9 +267,12 @@ async def switch_company(turn: Turn, args: dict[str, Any], call_id: str) -> Any:
 
 # --- visualization -----------------------------------------------------------
 
+# fields a new chart must state, so the model cannot leave "per quarter" to a silent default
+REQUIRED_ON_CREATE = {"chart": ("kind", "interval")}
+
 # tool name -> (schema, default title); build_spec() turns parameters into data
 CHARTS: dict[str, tuple[type[BaseModel], str]] = {
-    "chart_rating_trend": (ChartRatingTrend, "Average rating by month"),
+    "chart": (DrawChart, "Chart"),
     "chart_news_timeline": (ChartNewsTimeline, "News timeline"),
     "table_rating_periods": (TableRatingPeriods, "Ratings by period"),
     "table_compare_companies": (TableCompareCompanies, "Similar companies"),
@@ -289,8 +292,35 @@ def _merge_params(tool: str, old: dict[str, Any], new: dict[str, Any]) -> dict[s
 
 
 async def build_spec(state: dict[str, Any], tool: str, params: dict[str, Any]) -> dict[str, Any]:
-    if tool == "chart_rating_trend":
-        return viz.rating_trend(state, params)
+    if tool == "chart":
+        series = params.get("series")
+        if not series:
+            raise ToolError("series are required: say what to plot")
+        current = state.get("company") or {}
+        series = [{**sq, "company_id": sq.get("company_id") or current.get("id")} for sq in series]
+        companies = {}
+        async with SessionLocal() as s:
+            for cid in dict.fromkeys(sq["company_id"] for sq in series):
+                if cid == current.get("id"):
+                    # the checked company comes from the state, which honours its extra news
+                    companies[cid] = {
+                        "name": current.get("name", cid),
+                        "reviews": state.get("reviews", []),
+                        "news": [*state.get("news", []), *state.get("extra_news", [])],
+                    }
+                    continue
+                c = await data.get_company(s, cid)
+                if c is None:
+                    raise ToolError(f"unknown company id {cid}")
+                companies[cid] = {
+                    "name": c["name"],
+                    "reviews": await data.get_reviews(s, cid),
+                    "news": await data.get_news(s, cid),
+                }
+        try:
+            return viz.chart(state, {**params, "series": series}, companies)
+        except viz.ChartError as e:
+            raise ToolError(str(e)) from e
     if tool == "chart_news_timeline":
         return viz.news_timeline(state, params)
     if tool == "table_rating_periods":
@@ -387,6 +417,9 @@ def chart_handler(tool: str) -> Handler:
             turn.update["chart_seq"] = seq
             chart_id = f"chart-{seq}"
             params = {k: v for k, v in req.items() if v is not None}
+            missing = [f for f in REQUIRED_ON_CREATE.get(tool, ()) if f not in params]
+            if missing:
+                raise ToolError(f"a new chart needs {', '.join(missing)}; call again with them")
             chart = {"tool": tool, "params": params, "title": title or default_title, "version": 1}
         spec = await build_spec(turn.view(), tool, params)
         chart["digest"] = _digest(spec)
