@@ -38,3 +38,9 @@ async def test_company_includes_previous_names(session):
 async def test_search_news_by_previous_name(session):
     ids = [n["id"] for n in await data.search_news(session, "Leafline")]
     assert "ev_news_007_02" in ids
+
+
+@pytest.mark.parametrize("query", ["%", "_", "   ", "%%_%"])
+async def test_search_treats_wildcards_literally(session, query):
+    assert await data.search_companies(session, query) == []
+    assert await data.search_news(session, query) == []

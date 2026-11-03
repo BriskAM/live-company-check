@@ -20,11 +20,19 @@ def _iso(d: date | None) -> str | None:
     return d.isoformat() if d else None
 
 
+def _contains(text: str) -> str:
+    """ILIKE pattern for a literal substring: user input must not act as a wildcard."""
+    escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 async def search_companies(
     session: AsyncSession, query: str, limit: int = 5
 ) -> list[dict[str, Any]]:
     """Fuzzy search on current and previous names. Best match first."""
     q = query.strip()
+    if not q:
+        return []
     prev_sim = (
         select(func.max(func.similarity(CompanyPreviousName.name, q)))
         .where(CompanyPreviousName.company_id == Company.id)
@@ -37,7 +45,7 @@ async def search_companies(
         .where(
             or_(
                 score >= MATCH_THRESHOLD,
-                Company.name.ilike(f"%{q}%"),
+                Company.name.ilike(_contains(q), escape="\\"),
             )
         )
         .order_by(score.desc(), Company.name)
@@ -105,10 +113,17 @@ async def search_news(session: AsyncSession, text: str, limit: int = 20) -> list
 
     Used to look for coverage under previous names or of lookalike companies.
     """
-    pattern = f"%{text.strip()}%"
+    if not text.strip():
+        return []
+    pattern = _contains(text.strip())
     rows = await session.scalars(
         select(NewsItem)
-        .where(or_(NewsItem.headline.ilike(pattern), NewsItem.text.ilike(pattern)))
+        .where(
+            or_(
+                NewsItem.headline.ilike(pattern, escape="\\"),
+                NewsItem.text.ilike(pattern, escape="\\"),
+            )
+        )
         .order_by(NewsItem.date, NewsItem.id)
         .limit(limit)
     )

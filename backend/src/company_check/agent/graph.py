@@ -48,7 +48,14 @@ from company_check.agent.prompts import (
     round_context,
 )
 from company_check.agent.state import AgentContext, CheckState
-from company_check.agent.toolbox import CHECK_TOOLS, FEEDBACK_TOOLS, FINISH_TOOLS, Turn, run_call
+from company_check.agent.toolbox import (
+    CHARTS,
+    CHECK_TOOLS,
+    FEEDBACK_TOOLS,
+    FINISH_TOOLS,
+    Turn,
+    run_call,
+)
 from company_check.db import SessionLocal
 
 # Guard against an analyst that never finishes: after MAX_ANALYST_TURNS it must finish
@@ -449,16 +456,19 @@ def _norm(feedback: dict[str, Any]) -> str:
     return f"{feedback.get('target') or ''}|{' '.join(text.split())}"
 
 
-EXCLUSION_OPS = {"exclude_evidence", "update_findings"}
+# What an exclusion round may also do and still be a no-op to repeat: tidy the findings, or
+# draw a chart (the model sometimes adds a news timeline unasked; it already reflects the
+# exclusion).
+EXCLUSION_OPS = {"exclude_evidence", "update_findings", *CHARTS}
 
 
 def _already_applied(state: CheckState, norm: str) -> bool:
     """True when repeating this feedback cannot change anything:
     - it is the same as the last applied feedback (nothing has changed since), or
     - an earlier identical feedback excluded evidence, and all of it is still excluded
-      (exclusions are never undone, so later rounds cannot have reversed it). Concern and
-      recommendation edits made in that round are allowed: they follow from the exclusion
-      rather than being separate requests."""
+      (exclusions are never undone, so later rounds cannot have reversed it). Concern,
+      recommendation and chart changes made in that round are allowed: they follow from
+      the exclusion rather than being separate requests."""
     applied = [f for f in state.get("feedback_log", []) if f.get("outcome") == "applied"]
     if applied and applied[-1]["norm"] == norm:
         return True
