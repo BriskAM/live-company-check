@@ -65,12 +65,15 @@ export type Feedback = {
   result?: { outcome: "applied" | "duplicate"; changes: string[]; message?: string };
 };
 
-export type RatingTrendSpec = {
-  type: "rating_trend";
+export type DataChartSpec = {
+  type: "chart";
+  kind: "line" | "bar" | "area";
+  interval: "week" | "month" | "quarter" | "year";
+  y: { unit: "rating" | "count" | "percent"; label: string; domain: [number, number] | null };
   range: { start: string | null; end: string | null };
-  data: { month: string; avg: number; count: number }[];
-  markers: { date: string; month: string; label: string }[];
-  review_count: number;
+  series: { key: string; label: string; company_id: string; source: string; metric: string; total: number }[];
+  data: ({ bucket: string } & Record<string, number | string | null>)[];
+  markers: { date: string; bucket: string; label: string }[];
 };
 
 export type NewsTimelineSpec = {
@@ -85,7 +88,7 @@ export type TableSpec = {
   rows: Record<string, unknown>[];
 };
 
-export type ChartSpec = RatingTrendSpec | NewsTimelineSpec | TableSpec;
+export type ChartSpec = DataChartSpec | NewsTimelineSpec | TableSpec;
 
 export type Chart = {
   chart_id: string;

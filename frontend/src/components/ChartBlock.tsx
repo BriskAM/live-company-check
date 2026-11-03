@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ReferenceLine,
@@ -13,81 +18,158 @@ import {
 } from "recharts";
 import type { FeedbackTarget } from "@/lib/api";
 import { useChartColors } from "@/lib/theme";
-import type { Chart, ChartSpec, RatingTrendSpec, NewsTimelineSpec, TableSpec } from "@/lib/checkState";
+import type { Chart, ChartSpec, DataChartSpec, NewsTimelineSpec, TableSpec } from "@/lib/checkState";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const fmtMonth = (m: string) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ’${m.slice(2, 4)}`;
 
-function RatingTooltip({ active, payload }: { active?: boolean; payload?: { payload: { month: string; avg: number; count: number } }[] }) {
+/** Bucket keys sort as strings: YYYY, YYYY-Qn, YYYY-MM or the Monday of a week (YYYY-MM-DD). */
+function fmtBucket(b: string, interval: DataChartSpec["interval"]) {
+  if (interval === "year") return b;
+  if (interval === "quarter") return `${b.slice(5)} ’${b.slice(2, 4)}`;
+  if (interval === "week") return `${Number(b.slice(8))} ${MONTHS[Number(b.slice(5, 7)) - 1]} ’${b.slice(2, 4)}`;
+  return fmtMonth(b);
+}
+
+function fmtValue(v: unknown, unit: DataChartSpec["y"]["unit"]) {
+  if (typeof v !== "number") return "—";
+  if (unit === "rating") return v.toFixed(2);
+  if (unit === "percent") return `${v}%`;
+  return String(v);
+}
+
+function ChartTooltip({
+  active,
+  payload,
+  spec,
+}: {
+  active?: boolean;
+  payload?: { payload: Record<string, number | string | null> }[];
+  spec: DataChartSpec;
+}) {
   if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
+  const row = payload[0].payload;
   return (
     <div className="rounded-md border border-line bg-card px-2.5 py-1.5 text-xs shadow-sm">
-      <div className="font-medium text-ink">{fmtMonth(d.month)}</div>
-      <div className="text-muted">
-        Avg rating <span className="font-medium tabular-nums text-ink">{d.avg.toFixed(2)}</span>
-        {" · "}
-        {d.count} review{d.count === 1 ? "" : "s"}
-      </div>
+      <div className="font-medium text-ink">{fmtBucket(String(row.bucket), spec.interval)}</div>
+      {spec.series.map((s) => {
+        const n = row[`${s.key}_n`];
+        return (
+          <div key={s.key} className="text-muted">
+            {s.label}{" "}
+            <span className="font-medium tabular-nums text-ink">{fmtValue(row[s.key], spec.y.unit)}</span>
+            {typeof row[s.key] === "number" && s.metric !== "count" && ` · ${n} item${n === 1 ? "" : "s"}`}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function RatingTrend({ spec }: { spec: RatingTrendSpec }) {
+function DataChart({ spec }: { spec: DataChartSpec }) {
   const [showTable, setShowTable] = useState(false);
   const C = useChartColors();
-  if (spec.data.length === 0) return <p className="text-sm text-muted">No reviews in this range.</p>;
+  if (spec.data.length === 0) return <p className="text-sm text-muted">Nothing matched this chart.</p>;
+  const colors = [C.series, C.series2, C.ink, C.muted];
+  const color = (i: number) => colors[i % colors.length];
+  const common = {
+    data: spec.data,
+    margin: { top: 20, right: 16, bottom: 0, left: -16 },
+  };
+  const axes = [
+    <CartesianGrid key="grid" stroke={C.grid} strokeWidth={1} vertical={false} />,
+    <XAxis
+      key="x"
+      dataKey="bucket"
+      tickFormatter={(b: string) => fmtBucket(b, spec.interval)}
+      tick={{ fontSize: 11, fill: C.axis }}
+      tickLine={false}
+      axisLine={{ stroke: C.grid }}
+      minTickGap={16}
+    />,
+    <YAxis
+      key="y"
+      domain={spec.y.domain ?? [0, "auto"]}
+      ticks={spec.y.unit === "rating" ? [1, 2, 3, 4, 5] : undefined}
+      allowDecimals={spec.y.unit !== "count"}
+      tick={{ fontSize: 11, fill: C.axis }}
+      tickLine={false}
+      axisLine={false}
+    />,
+    <Tooltip key="tip" content={<ChartTooltip spec={spec} />} cursor={{ stroke: C.axis, strokeWidth: 1, fill: C.grid, fillOpacity: 0.4 }} />,
+    ...(spec.series.length > 1 ? [<Legend key="legend" iconType="plainline" wrapperStyle={{ fontSize: 12 }} />] : []),
+    ...spec.markers.map((m) => (
+      <ReferenceLine
+        key={`${m.date}-${m.label}`}
+        x={m.bucket}
+        stroke={C.muted}
+        strokeWidth={1}
+        strokeDasharray="3 3"
+        label={{ value: m.label, position: "top", fontSize: 11, fill: C.muted }}
+      />
+    )),
+  ];
+  const dash = (i: number) => (i >= 2 ? "5 3" : undefined);
   return (
     <div>
-      <div className="h-56 w-full">
+      <div className="h-60 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={spec.data} margin={{ top: 20, right: 16, bottom: 0, left: -16 }}>
-            <CartesianGrid stroke={C.grid} strokeWidth={1} vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickFormatter={fmtMonth}
-              tick={{ fontSize: 11, fill: C.axis }}
-              tickLine={false}
-              axisLine={{ stroke: C.grid }}
-              minTickGap={16}
-            />
-            <YAxis
-              domain={[1, 5]}
-              ticks={[1, 2, 3, 4, 5]}
-              tick={{ fontSize: 11, fill: C.axis }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip content={<RatingTooltip />} cursor={{ stroke: C.axis, strokeWidth: 1 }} />
-            {spec.markers.map((m) => (
-              <ReferenceLine
-                key={`${m.date}-${m.label}`}
-                x={m.month}
-                stroke={C.muted}
-                strokeWidth={1}
-                strokeDasharray="3 3"
-                label={{ value: m.label, position: "top", fontSize: 11, fill: C.muted }}
-              />
-            ))}
-            <Line
-              type="linear"
-              dataKey="avg"
-              stroke={C.series}
-              strokeWidth={2}
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              dot={{ r: 4, fill: C.series, stroke: C.surface, strokeWidth: 2 }}
-              activeDot={{ r: 6, fill: C.series, stroke: C.surface, strokeWidth: 2 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
+          {spec.kind === "bar" ? (
+            <BarChart {...common}>
+              {axes}
+              {spec.series.map((s, i) => (
+                <Bar key={s.key} dataKey={s.key} name={s.label} fill={color(i)} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+              ))}
+            </BarChart>
+          ) : spec.kind === "area" ? (
+            <AreaChart {...common}>
+              {axes}
+              {spec.series.map((s, i) => (
+                <Area
+                  key={s.key}
+                  type="linear"
+                  dataKey={s.key}
+                  name={s.label}
+                  stroke={color(i)}
+                  fill={color(i)}
+                  fillOpacity={0.18}
+                  strokeWidth={2}
+                  strokeDasharray={dash(i)}
+                  connectNulls
+                  isAnimationActive={false}
+                />
+              ))}
+            </AreaChart>
+          ) : (
+            <LineChart {...common}>
+              {axes}
+              {spec.series.map((s, i) => (
+                <Line
+                  key={s.key}
+                  type="linear"
+                  dataKey={s.key}
+                  name={s.label}
+                  stroke={color(i)}
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  strokeDasharray={dash(i)}
+                  connectNulls
+                  dot={{ r: 4, fill: color(i), stroke: C.surface, strokeWidth: 2 }}
+                  activeDot={{ r: 6, fill: color(i), stroke: C.surface, strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+              ))}
+            </LineChart>
+          )}
         </ResponsiveContainer>
       </div>
-      <div className="mt-1 flex items-center justify-between text-xs text-muted">
+      <div className="mt-1 flex items-center justify-between gap-3 text-xs text-muted">
         <span>
-          {fmtMonth(spec.range.start ?? "")} – {fmtMonth(spec.range.end ?? "")} · {spec.review_count} reviews
+          {spec.y.label} · {fmtBucket(spec.range.start ?? "", spec.interval)} – {fmtBucket(spec.range.end ?? "", spec.interval)} ·{" "}
+          {spec.series.map((s) => `${s.label}: ${s.total}`).join(" · ")}
         </span>
-        <button onClick={() => setShowTable((v) => !v)} className="hover:text-ink">
+        <button onClick={() => setShowTable((v) => !v)} className="shrink-0 hover:text-ink">
           {showTable ? "Hide data" : "Show data"}
         </button>
       </div>
@@ -96,9 +178,8 @@ function RatingTrend({ spec }: { spec: RatingTrendSpec }) {
           spec={{
             type: "table",
             columns: [
-              { key: "month", label: "Month" },
-              { key: "avg", label: "Avg rating", align: "right" },
-              { key: "count", label: "Reviews", align: "right" },
+              { key: "bucket", label: spec.interval[0].toUpperCase() + spec.interval.slice(1) },
+              ...spec.series.map((s) => ({ key: s.key, label: s.label, align: "right" as const })),
             ],
             rows: spec.data,
           }}
@@ -166,8 +247,8 @@ function DataTable({ spec }: { spec: TableSpec }) {
 
 function Body({ spec }: { spec: ChartSpec }) {
   switch (spec.type) {
-    case "rating_trend":
-      return <RatingTrend spec={spec} />;
+    case "chart":
+      return <DataChart spec={spec} />;
     case "news_timeline":
       return <NewsTimeline spec={spec} />;
     case "table":

@@ -1,5 +1,15 @@
 # Progress Log
 
+## Walkthrough response framing (2026-11-01)
+
+- Corrected sixteen private video scenes that could leave the latest response out of view
+  after a message. The recorder now follows new activity and holds the completed response.
+- Replacement views replay the original persisted events up to each scene's timestamp;
+  no new reviewer commands or LLM calls were made. Responses were verified above the
+  composer, with the related chart, findings or report aligned in the case file.
+- Both revised editions keep the original five-minute timeline and soundtracks.
+  Application behavior is unchanged.
+
 ## Final repository housekeeping (2026-11-01)
 
 - Added GitHub Actions for backend tests with seeded Postgres, lint and formatting, and
@@ -25,6 +35,19 @@
 - Demo tooling is ignored, recording notes and Excalidraw sources are kept under `private/`,
   and public documentation keeps only the rendered architecture diagram. Previously tracked
   demo files are removed from the index while local copies are preserved.
+
+## General chart tool (2026-11-02)
+- Replaced `chart_rating_trend` with one `chart` tool: line, bar or area, week to year
+  intervals, one to four series (average rating, count or share of low ratings, over
+  reviews or news, for any company, with filters). Comparing two companies is two series.
+- Unit tests in `tests/test_viz.py` (ranges, markers, gaps, exclusions, counts, intervals,
+  mixed-unit error); checked against the real database for two companies. `run_samples.py`
+  now looks for a `chart` with an average-rating series; `check_3` passes live (5/5).
+- Found while recording a demo, fixed: the model left `interval` out, so "per quarter" charts
+  came out monthly under a quarterly title, and it combined a rating filter with the
+  low-rating share (every point 100%). A new chart must now state `kind` and `interval`
+  (the error tells the model what to add), and `low_rating_share` with a rating filter is
+  refused. Demo video: `demo/out/chart/chart-tool-demo.mp4` (local, ignored).
 
 ## Milestones
 

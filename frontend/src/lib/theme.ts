@@ -39,7 +39,7 @@ export function useTheme(): [Theme, (t: Theme) => void] {
   return [theme, setTheme];
 }
 
-export type ChartColors = { series: string; grid: string; axis: string; surface: string; ink: string; muted: string };
+export type ChartColors = { series: string; series2: string; grid: string; axis: string; surface: string; ink: string; muted: string };
 
 /** Chart colors from the theme tokens. Recharts takes colors as SVG attributes, where CSS
  * variables don't apply, so they are read from the computed style and refreshed on theme change. */
@@ -47,6 +47,7 @@ export function useChartColors(): ChartColors {
   const [theme] = useTheme();
   const [colors, setColors] = useState<ChartColors>({
     series: "#8250df",
+    series2: "#c2570c",
     grid: "#e6ebf1",
     axis: "#6e7781",
     surface: "#ffffff",
@@ -58,6 +59,7 @@ export function useChartColors(): ChartColors {
     const v = (name: string) => s.getPropertyValue(name).trim();
     setColors({
       series: v("--series"),
+      series2: v("--series-2"),
       grid: v("--grid"),
       axis: v("--axis"),
       surface: v("--card"),

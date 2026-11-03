@@ -161,11 +161,24 @@ returned to the model with the error so it can fix them. A turn limit stops loop
 ## Visualization
 
 ### Charts are specs computed from data; the LLM only picks parameters
-Four tools: `chart_rating_trend`, `chart_news_timeline`, `table_rating_periods`,
-`table_compare_companies`. Handlers compute the data from state (respecting excluded
-evidence) and emit a JSON spec the UI renders with Recharts / HTML. The LLM gets a short
-text summary back, never raw data to restate. "Last N months" is a parameter resolved in
-code against the check's as-of date, so the model does no date arithmetic.
+Three kinds of tool: one general `chart` tool, `chart_news_timeline`, and the tables
+`table_rating_periods` and `table_compare_companies`. Handlers compute the data from state
+(respecting excluded evidence) and emit a JSON spec the UI renders with Recharts / HTML. The
+LLM gets a short text summary back, never raw data to restate. "Last N months" is a parameter
+resolved in code against the check's as-of date, so the model does no date arithmetic.
+
+### One general chart tool instead of one tool per chart
+`chart` takes a kind (line, bar, area), an interval (week, month, quarter, year), one to four
+series and optional markers. A series is a metric (average rating, count, share of 1-2 star
+ratings) over a company's reviews or news, with optional filters (rating range, text
+contains). So a rating trend, a comparison of two companies, reviews per quarter or news per
+month are all the same tool. The agent describes what to plot and code computes every number,
+so it still cannot invent figures. Series must share one unit (ratings, counts or percents):
+one chart has one y axis, and mixing them returns an error that tells the model to draw two
+charts. This replaced `chart_rating_trend`; the checked company's data comes from the state
+(exclusions and extra searched news apply), other companies are read from the database on
+each redraw. Cost: the model has more freedom to draw something unhelpful, and the schema it
+reads is larger than the old one.
 
 ### Update by id, not a new chart
 Every chart tool takes an optional `chart_id`; with it, the call updates that chart and bumps

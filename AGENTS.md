@@ -95,8 +95,9 @@ a minute, a few hundred a day), so run single checks (`run_samples.py check_3`) 
   `ToolError` for bad input; add evidence via the turn helpers), register in `HANDLERS` and
   `SCHEMAS`, add to `CHECK_TOOL_NAMES` and/or `FEEDBACK_TOOL_NAMES`, give it a label in
   `frontend/src/components/Timeline.tsx`.
-- **New chart:** schema + `CHARTS` entry + branch in `build_spec` + pure function in
-  `agent/viz.py` + renderer for the spec `type` in `frontend/src/components/ChartBlock.tsx`.
+- **New chart:** most needs are a new metric or source in the general `chart` tool
+  (`SeriesQuery` in `agent/state.py`, `viz.chart`). For a different shape of chart: schema +
+  `CHARTS` entry + branch in `build_spec` + pure function in `agent/viz.py` + renderer for the spec `type` in `frontend/src/components/ChartBlock.tsx`.
 - **New event type:** `sink.emit(type, payload, key=...)` (key = idempotency) and a case in
   `reduce()` in `frontend/src/lib/checkState.ts` with a test.
 - **Change model or provider:** `.env` (`LLM_MODEL`, `LLM_FALLBACK_MODEL`, `LLM_RPM`,
